@@ -5,7 +5,7 @@
  */
 
 import Cookies from 'js-cookie';
-import { getCurrentScriptUrl, getQueryParam, loadScript, prependToTitle, replaceCSSLink } from './core';
+import { Page } from './page';
 
 
 
@@ -14,7 +14,7 @@ function initEngine() {
     console.log("Init engine.");
 
     // Process any engine mode commands 
-    const engineModeCommand = getQueryParam('engine.mode');
+    const engineModeCommand = Page.getQueryParam('engine.mode');
     switch(engineModeCommand) {
         case 'dev':
             Cookies.set('siteEngineMode', 'dev', { expires: 7 });
@@ -40,12 +40,12 @@ function initEngine() {
             break;
         case 'prod':
         default:
-            const scriptUrl = getCurrentScriptUrl();
+            const scriptUrl = Page.getCurrentScriptUrl();
             if (scriptUrl) {
     
                 const engineScriptUrl = scriptUrl.replace('init.js', 'index.js');
                 
-                loadScript(engineScriptUrl);
+                Page.loadScript(engineScriptUrl);
                 break;
             } 
     }
@@ -58,14 +58,14 @@ initEngine();
 function invokeDebugMode() {
 
     // Prepend to the document title
-    prependToTitle("🅳🅴🆅 ➜ ");
+    Page.prependToTitle("🅳🅴🆅 ➜ ");
 
     // Handle scripts
     const scripts = document.querySelectorAll<HTMLScriptElement>('script');
     scripts.forEach(script => {
         const devSrc = script.getAttribute('dev-src');
         if (devSrc) {
-            loadScript(devSrc);
+            Page.loadScript(devSrc);
         }
     });
 
@@ -74,7 +74,7 @@ function invokeDebugMode() {
     links.forEach(link => {
         const devHref = link.getAttribute('dev-src');
         if (devHref) {
-            replaceCSSLink(link, devHref);
+            Page.replaceCSSLink(link, devHref);
         }
     });
 
