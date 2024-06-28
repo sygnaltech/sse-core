@@ -1,0 +1,23 @@
+{
+    "name": "@sygnal/sse",
+    "version": "0.1.0",
+    "description": "Core functionality for Sygnal Site Engine (SSE)",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "tsc",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": {
+        "name": "Michael Wells",
+        "email": "mike@sygnal.com",
+        "url": "https://www.sygnal.com"
+      },
+    "license": "ISC",
+    "devDependencies": {
+        "@types/js-cookie": "^3.0.6",
+        "typescript": "^4.0.0"
+    },
+    "dependencies": {
+        "js-cookie": "^3.0.5"
+    }
+}
