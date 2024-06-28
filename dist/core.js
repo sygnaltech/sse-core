@@ -10,13 +10,24 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.convertToPixels = exports.hasAncestorWithAttribute = exports.getAncestorAttributeValue = exports.findAncestorWithAttribute = exports.getCurrentScriptUrl = exports.prependToTitle = exports.replaceCSSLink = exports.replaceScriptSource = exports.loadStyle = exports.loadEngineCSS = exports.loadCSS = exports.loadScript = exports.getQueryParam = void 0;
+exports.getQueryParam = getQueryParam;
+exports.loadScript = loadScript;
+exports.loadCSS = loadCSS;
+exports.loadEngineCSS = loadEngineCSS;
+exports.loadStyle = loadStyle;
+exports.replaceScriptSource = replaceScriptSource;
+exports.replaceCSSLink = replaceCSSLink;
+exports.prependToTitle = prependToTitle;
+exports.getCurrentScriptUrl = getCurrentScriptUrl;
+exports.findAncestorWithAttribute = findAncestorWithAttribute;
+exports.getAncestorAttributeValue = getAncestorAttributeValue;
+exports.hasAncestorWithAttribute = hasAncestorWithAttribute;
+exports.convertToPixels = convertToPixels;
 // Utility function to get a query parameter value by name
 function getQueryParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(name);
 }
-exports.getQueryParam = getQueryParam;
 // Add a new async script to the page
 // at the end of the body
 function loadScript(url) {
@@ -25,7 +36,6 @@ function loadScript(url) {
     //    script.async = true;
     document.body.appendChild(script);
 }
-exports.loadScript = loadScript;
 // Add a new CSS file to the page
 function loadCSS(url) {
     const link = document.createElement('link');
@@ -33,7 +43,6 @@ function loadCSS(url) {
     link.href = url;
     document.head.appendChild(link);
 }
-exports.loadCSS = loadCSS;
 // Add a new Engine CSS file to the page
 // Expected to be in the /dist/css/ dir 
 function loadEngineCSS(cssFileName) {
@@ -50,7 +59,6 @@ function loadEngineCSS(cssFileName) {
         console.error('Unable to determine the currently executing script.');
     }
 }
-exports.loadEngineCSS = loadEngineCSS;
 // Add a new Style element to the page
 function loadStyle(css) {
     const style = document.createElement('style');
@@ -59,22 +67,18 @@ function loadStyle(css) {
     style.innerText = css;
     document.head.appendChild(style);
 }
-exports.loadStyle = loadStyle;
 // Replace an existing script source
 function replaceScriptSource(element, newSrc) {
     element.src = newSrc;
 }
-exports.replaceScriptSource = replaceScriptSource;
 // Replace an existing CSS source
 function replaceCSSLink(element, newHref) {
     element.href = newHref;
 }
-exports.replaceCSSLink = replaceCSSLink;
 // Function to prepend text to the document title in development mode
 function prependToTitle(text) {
     document.title = `${text}${document.title}`;
 }
-exports.prependToTitle = prependToTitle;
 // Function to get the current script URL
 function getCurrentScriptUrl() {
     // Check if document.currentScript is supported
@@ -87,7 +91,6 @@ function getCurrentScriptUrl() {
     console.error("document.currentScript is not supported in this browser.");
     return null;
 }
-exports.getCurrentScriptUrl = getCurrentScriptUrl;
 function findAncestorWithAttribute(element, attributeName) {
     let currentElement = element;
     while (currentElement) {
@@ -98,7 +101,6 @@ function findAncestorWithAttribute(element, attributeName) {
     }
     return null;
 }
-exports.findAncestorWithAttribute = findAncestorWithAttribute;
 function getAncestorAttributeValue(element, attributeName) {
     let currentElement = element;
     while (currentElement) {
@@ -109,11 +111,9 @@ function getAncestorAttributeValue(element, attributeName) {
     }
     return null;
 }
-exports.getAncestorAttributeValue = getAncestorAttributeValue;
 function hasAncestorWithAttribute(element, attributeName) {
     return findAncestorWithAttribute(element, attributeName) !== null;
 }
-exports.hasAncestorWithAttribute = hasAncestorWithAttribute;
 function convertToPixels(value, contextElement = document.documentElement) {
     // Parse the numeric value and unit, including negative values
     const match = value.match(/^(-?\d+\.?\d*)(rem|em|px|vh|vw|%)$/);
@@ -142,14 +142,13 @@ function convertToPixels(value, contextElement = document.documentElement) {
             throw new Error('Unsupported unit');
     }
 }
-exports.convertToPixels = convertToPixels;
 /*
 // Example usage:
 const pixelValue = convertToPixels("10vh");
 console.log(pixelValue);
 */
-function getResponseHeader(headerName, url = undefined) {
-    return __awaiter(this, void 0, void 0, function* () {
+function getResponseHeader(headerName_1) {
+    return __awaiter(this, arguments, void 0, function* (headerName, url = undefined) {
         const headers = yield getResponseHeaders(url);
         if (!headers)
             return undefined;
@@ -159,8 +158,8 @@ function getResponseHeader(headerName, url = undefined) {
     });
 }
 // Function to check if the reverse proxy header is present
-function getResponseHeaders(url = undefined) {
-    return __awaiter(this, void 0, void 0, function* () {
+function getResponseHeaders() {
+    return __awaiter(this, arguments, void 0, function* (url = undefined) {
         try {
             if (!url) {
                 url = window.location.href;
