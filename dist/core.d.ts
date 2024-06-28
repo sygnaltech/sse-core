@@ -1,0 +1,13 @@
+export declare function getQueryParam(name: string): string | null;
+export declare function loadScript(url: string): void;
+export declare function loadCSS(url: string): void;
+export declare function loadEngineCSS(cssFileName: string): void;
+export declare function loadStyle(css: string): void;
+export declare function replaceScriptSource(element: HTMLScriptElement, newSrc: string): void;
+export declare function replaceCSSLink(element: HTMLLinkElement, newHref: string): void;
+export declare function prependToTitle(text: string): void;
+export declare function getCurrentScriptUrl(): string | null;
+export declare function findAncestorWithAttribute(element: HTMLElement, attributeName: string): HTMLElement | null;
+export declare function getAncestorAttributeValue(element: HTMLElement, attributeName: string): string | null;
+export declare function hasAncestorWithAttribute(element: HTMLElement, attributeName: string): boolean;
+export declare function convertToPixels(value: string, contextElement?: HTMLElement): number;
