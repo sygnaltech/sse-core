@@ -1,6 +1,6 @@
 {
     "name": "@sygnal/sse",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Core functionality for Sygnal Site Engine (SSE)",
     "main": "dist/index.js",
     "types": "dist/index.d.ts", 
@@ -16,7 +16,7 @@
     "license": "SEE LICENSE IN LICENSE",
     "repository": {
         "type": "git",
-        "url": "https://github.com/sygnaltech/sse-core.git"
+        "url": "git+https://github.com/sygnaltech/sse-core.git"
     },    
     "devDependencies": {
         "@types/js-cookie": "^3.0.6",

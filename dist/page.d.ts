@@ -8,6 +8,7 @@ export declare class Page {
     static replaceCSSLink(element: HTMLLinkElement, newHref: string): void;
     static prependToTitle(text: string): void;
     static getCurrentScriptUrl(): string | null;
+    static getCurrentScriptBaseUrl(): string | undefined;
     static findAncestorWithAttribute(element: HTMLElement, attributeName: string): HTMLElement | null;
     static getAncestorAttributeValue(element: HTMLElement, attributeName: string): string | null;
     static hasAncestorWithAttribute(element: HTMLElement, attributeName: string): boolean;

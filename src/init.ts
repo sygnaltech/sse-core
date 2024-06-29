@@ -9,7 +9,7 @@ import { Page } from './page';
 
 
 
-function initEngine() {
+function initEngine2() {
 
     console.log("Init engine.");
 
@@ -52,7 +52,7 @@ function initEngine() {
 
 }
 
-initEngine();
+// initEngine();
 
 
 function invokeDebugMode() {

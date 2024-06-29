@@ -1,4 +1,3 @@
-"use strict";
 // Determine Webflow breakpoint?
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -9,9 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Page = void 0;
-class Page {
+export class Page {
     // Utility function to get a query parameter value by name
     static getQueryParam(name) {
         const urlParams = new URLSearchParams(window.location.search);
@@ -36,17 +33,17 @@ class Page {
     // Expected to be in the /dist/css/ dir 
     static loadEngineCSS(cssFileName) {
         // Get the URL of the currently executing script
-        const currentScript = document.currentScript;
-        if (currentScript) {
-            const scriptURL = new URL(currentScript.src);
-            const origin = scriptURL.origin;
-            const path = scriptURL.pathname.substring(0, scriptURL.pathname.lastIndexOf('/'));
-            const cssURL = `${origin}${path}/css/${cssFileName}`;
-            this.loadCSS(cssURL);
-        }
-        else {
-            console.error('Unable to determine the currently executing script.');
-        }
+        let libPath = window.SSE.baseUrl;
+        // const currentScript = document.currentScript as HTMLScriptElement;
+        // if (currentScript) {
+        // const scriptURL = new URL(currentScript.src);
+        // const origin = scriptURL.origin;
+        // const path = scriptURL.pathname.substring(0, scriptURL.pathname.lastIndexOf('/'));
+        const cssURL = `${libPath}/css/${cssFileName}`;
+        this.loadCSS(cssURL);
+        // } else {
+        //     console.error('Unable to determine the currently executing script.');
+        // }
     }
     // Add a new Style element to the page
     static loadStyle(css) {
@@ -79,6 +76,21 @@ class Page {
         // For browsers that do not support document.currentScript
         console.error("document.currentScript is not supported in this browser.");
         return null;
+    }
+    static getCurrentScriptBaseUrl() {
+        // Get the URL of the currently executing script
+        const currentScript = document.currentScript;
+        if (currentScript) {
+            const scriptURL = new URL(currentScript.src);
+            const origin = scriptURL.origin;
+            const path = scriptURL.pathname.substring(0, scriptURL.pathname.lastIndexOf('/'));
+            const baseURL = `${origin}${path}`;
+            return baseURL;
+        }
+        else {
+            console.error('Unable to determine the currently executing script.');
+        }
+        return undefined;
     }
     static findAncestorWithAttribute(element, attributeName) {
         let currentElement = element;
@@ -165,5 +177,4 @@ class Page {
         });
     }
 }
-exports.Page = Page;
 //# sourceMappingURL=page.js.map

@@ -1,14 +1,14 @@
 # Changelog
 
-## [0.2.0] - TBA   
+## [0.1.1] - 2024-06-29
 ### Added
-- TBA
+- Global SSE lib path
 
 ### Changed
-- TBA
+- Cleaned up lib initialization
 
 ### Fixed
-- TBA
+- Resolved an edge case on the Site.exec() code 
 
 ## [0.1.0] - 2024-06-28
 ### Initial release

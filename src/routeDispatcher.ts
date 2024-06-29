@@ -73,7 +73,7 @@ export class RouteDispatcher {
 
         // Init site-level
         const site = new this._SiteClass();
-        site.setup(); 
+        site.exec(); 
 //        (new Site().exec());
 
         // Init route-level

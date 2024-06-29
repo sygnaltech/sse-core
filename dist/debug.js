@@ -1,4 +1,3 @@
-"use strict";
 /*
  * Sygnal Debug
  *
@@ -12,10 +11,8 @@
  * localstorage
  * chrome tool
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Debug = void 0;
 const DEFAULT_APP_NAME = 'Site';
-class Debug {
+export class Debug {
     // Get or set WFU persistent debug state
     // which is stored in localStorage. 
     get persistentDebug() {
@@ -71,5 +68,4 @@ class Debug {
             console.debug(this._label, ...args);
     }
 }
-exports.Debug = Debug;
 //# sourceMappingURL=debug.js.map

@@ -1,12 +1,9 @@
-"use strict";
 /*
  * Sygnal
  * Route Dispatcher
  *
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.RouteDispatcher = void 0;
-class RouteDispatcher {
+export class RouteDispatcher {
     constructor(SiteClass) {
         this._SiteClass = SiteClass;
     }
@@ -45,7 +42,7 @@ class RouteDispatcher {
     execRoute() {
         // Init site-level
         const site = new this._SiteClass();
-        site.setup();
+        site.exec();
         //        (new Site().exec());
         // Init route-level
         const path = window.location.pathname;
@@ -59,5 +56,4 @@ class RouteDispatcher {
         }
     }
 }
-exports.RouteDispatcher = RouteDispatcher;
 //# sourceMappingURL=routeDispatcher.js.map
