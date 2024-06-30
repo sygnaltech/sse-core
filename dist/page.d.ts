@@ -1,6 +1,23 @@
+import { ScriptConfig } from "./script";
 export declare class Page {
-    static getQueryParam(name: string): string | null;
-    static loadScript(url: string): void;
+    static Head: {
+        new (): {};
+        /**
+         * Appends the specified script to the page &lt;head&gt;.
+         * @param src The src url of the script to load.
+         * @param config Configuration options for the script element.
+         */
+        loadScript(src: string, config?: ScriptConfig): void;
+    };
+    static Body: {
+        new (): {};
+        /**
+         * Appends the specified script to the page &lt;body&gt;.
+         * @param src The src url of the script to load.
+         * @param config Configuration options for the script element.
+         */
+        loadScript(src: string, config?: ScriptConfig): void;
+    };
     static loadCSS(url: string): void;
     static loadEngineCSS(cssFileName: string): void;
     static loadStyle(css: string): void;

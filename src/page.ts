@@ -2,23 +2,60 @@
 
 // Determine Webflow breakpoint?
 
+import { ScriptConfig, ScriptElement } from "./script";
+
 export class Page {
 
-    // Utility function to get a query parameter value by name
-        static getQueryParam(name: string): string | null {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
+    static Head = class {
+
+
+        /**
+         * Appends the specified script to the page &lt;head&gt;.
+         * @param src The src url of the script to load.
+         * @param config Configuration options for the script element.
+         */
+        static loadScript(src: string, config?: ScriptConfig): void {
+
+            const script: ScriptElement = new ScriptElement(src, config);
+            script.appendTo('head');
+
+            // const script = document.createElement('script');
+            // script.src = src;
+            // document.body.appendChild(script);
         }
+
+    };
+
+    static Body = class {
+
+        /**
+         * Appends the specified script to the page &lt;body&gt;.
+         * @param src The src url of the script to load.
+         * @param config Configuration options for the script element.
+         */
+        static loadScript(src: string, config?: ScriptConfig): void {
+
+            const script: ScriptElement = new ScriptElement(src, config);
+            script.appendTo('body');
+
+            // const script = document.createElement('script');
+            // script.src = src;
+            // document.body.appendChild(script);
+        }
+
+    };
+
+
     
     
-        // Add a new async script to the page
-        // at the end of the body
-        static loadScript(url: string): void {
-            const script = document.createElement('script');
-            script.src = url;
-        //    script.async = true;
-            document.body.appendChild(script);
-        }
+        // // Add a new async script to the page
+        // // at the end of the body
+        // static loadScript(url: string): void {
+        //     const script = document.createElement('script');
+        //     script.src = url;
+        // //    script.async = true;
+        //     document.body.appendChild(script);
+        // }
     
         // Add a new CSS file to the page
         static loadCSS(url: string): void {

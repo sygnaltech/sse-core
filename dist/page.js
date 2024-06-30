@@ -8,20 +8,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+import { ScriptElement } from "./script";
 export class Page {
-    // Utility function to get a query parameter value by name
-    static getQueryParam(name) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(name);
-    }
-    // Add a new async script to the page
-    // at the end of the body
-    static loadScript(url) {
-        const script = document.createElement('script');
-        script.src = url;
-        //    script.async = true;
-        document.body.appendChild(script);
-    }
+    // // Add a new async script to the page
+    // // at the end of the body
+    // static loadScript(url: string): void {
+    //     const script = document.createElement('script');
+    //     script.src = url;
+    // //    script.async = true;
+    //     document.body.appendChild(script);
+    // }
     // Add a new CSS file to the page
     static loadCSS(url) {
         const link = document.createElement('link');
@@ -148,8 +144,8 @@ export class Page {
     const pixelValue = convertToPixels("10vh");
     console.log(pixelValue);
     */
-    static getResponseHeader(headerName_1) {
-        return __awaiter(this, arguments, void 0, function* (headerName, url = undefined) {
+    static getResponseHeader(headerName, url = undefined) {
+        return __awaiter(this, void 0, void 0, function* () {
             const headers = yield this.getResponseHeaders(url);
             if (!headers)
                 return undefined;
@@ -159,8 +155,8 @@ export class Page {
         });
     }
     // Function to check if the reverse proxy header is present
-    static getResponseHeaders() {
-        return __awaiter(this, arguments, void 0, function* (url = undefined) {
+    static getResponseHeaders(url = undefined) {
+        return __awaiter(this, void 0, void 0, function* () {
             try {
                 if (!url) {
                     url = window.location.href;
@@ -177,4 +173,32 @@ export class Page {
         });
     }
 }
+Page.Head = class {
+    /**
+     * Appends the specified script to the page &lt;head&gt;.
+     * @param src The src url of the script to load.
+     * @param config Configuration options for the script element.
+     */
+    static loadScript(src, config) {
+        const script = new ScriptElement(src, config);
+        script.appendTo('head');
+        // const script = document.createElement('script');
+        // script.src = src;
+        // document.body.appendChild(script);
+    }
+};
+Page.Body = class {
+    /**
+     * Appends the specified script to the page &lt;body&gt;.
+     * @param src The src url of the script to load.
+     * @param config Configuration options for the script element.
+     */
+    static loadScript(src, config) {
+        const script = new ScriptElement(src, config);
+        script.appendTo('body');
+        // const script = document.createElement('script');
+        // script.src = src;
+        // document.body.appendChild(script);
+    }
+};
 //# sourceMappingURL=page.js.map

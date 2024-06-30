@@ -1,9 +1,9 @@
-export interface IRouteHandler {
+export interface IModule {
     setup(): void;
     exec(): void;
 }
 type RouteHandlerClass = {
-    new (): IRouteHandler;
+    new (): IModule;
 };
 export interface Routes {
     [path: string]: RouteHandlerClass;

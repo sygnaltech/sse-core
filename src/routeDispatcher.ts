@@ -9,7 +9,7 @@
 
  
 
-export interface IRouteHandler {
+export interface IModule {
 
     setup(): void;
     
@@ -19,7 +19,7 @@ export interface IRouteHandler {
 
   
 type RouteHandler = () => void;
-type RouteHandlerClass = { new (): IRouteHandler };
+type RouteHandlerClass = { new (): IModule };
 
 
 export interface Routes {

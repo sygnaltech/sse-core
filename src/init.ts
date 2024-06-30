@@ -5,6 +5,7 @@
  */
 
 import Cookies from 'js-cookie';
+import { Request } from './request';
 import { Page } from './page';
 
 
@@ -14,7 +15,7 @@ function initEngine2() {
     console.log("Init engine.");
 
     // Process any engine mode commands 
-    const engineModeCommand = Page.getQueryParam('engine.mode');
+    const engineModeCommand = Request.getQueryParam('engine.mode');
     switch(engineModeCommand) {
         case 'dev':
             Cookies.set('siteEngineMode', 'dev', { expires: 7 });
@@ -45,7 +46,7 @@ function initEngine2() {
     
                 const engineScriptUrl = scriptUrl.replace('init.js', 'index.js');
                 
-                Page.loadScript(engineScriptUrl);
+                Page.Head.loadScript(engineScriptUrl);
                 break;
             } 
     }
@@ -65,7 +66,7 @@ function invokeDebugMode() {
     scripts.forEach(script => {
         const devSrc = script.getAttribute('dev-src');
         if (devSrc) {
-            Page.loadScript(devSrc);
+            Page.Head.loadScript(devSrc);
         }
     });
 
