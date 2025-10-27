@@ -37,8 +37,11 @@ To quickly start a new Webflow project with SSE, use our template repository:
 
 ## 🎯 Key Features
 
+- **Decorator-Based Auto-Registration** - Use `@page` and `@component` decorators for automatic discovery
+- **Component Management** - Track and retrieve component instances across your application
 - **Dynamic Script & CSS Loading** - Load external resources programmatically
 - **Route-Based Module Execution** - Organize code by page/route with wildcard support
+- **Extensible Component Initialization** - Flexible component initialization with customizable options
 - **Development/Production Modes** - Seamlessly switch between dev and prod environments
 - **Debug Utilities** - Conditional logging with localStorage persistence
 - **DOM Utilities** - Helper functions for element manipulation and traversal
@@ -46,6 +49,145 @@ To quickly start a new Webflow project with SSE, use our template repository:
 - **TypeScript Support** - Fully typed with comprehensive type definitions
 
 ## 📚 Core Modules
+
+### Decorator System
+
+Automatically register pages and components using TypeScript decorators:
+
+```typescript
+import { IModule, page, component } from '@sygnal/sse';
+
+// Register a page with a route
+@page('/')
+export class HomePage implements IModule {
+  setup() {
+    console.log('Home page setup');
+  }
+
+  async exec() {
+    console.log('Home page executing');
+  }
+}
+
+// Register a page with wildcard route
+@page('/blog/*')
+export class BlogPage implements IModule {
+  async exec() {
+    const slug = window.location.pathname.replace('/blog/', '');
+    console.log('Blog post:', slug);
+  }
+}
+
+// Register multiple routes on one page
+@page('/about')
+@page('/about-us')
+@page('/team')
+export class AboutPage implements IModule {
+  async exec() {
+    console.log('About page loaded');
+  }
+}
+
+// Register a component
+@component('my-component')
+export class MyComponent implements IModule {
+  constructor(private elem: HTMLElement) {}
+
+  setup() {
+    console.log('Component setup on:', this.elem);
+  }
+
+  async exec() {
+    console.log('Component executing');
+  }
+}
+```
+
+**Registry Utilities:**
+
+```typescript
+import { getAllPages, getRegistryStats, getComponent } from '@sygnal/sse';
+
+// Get all registered pages as a routes object
+const routes = getAllPages(); // { '/': HomePage, '/blog/*': BlogPage, ... }
+
+// Get registry statistics
+const stats = getRegistryStats();
+console.log(`${stats.pages} pages, ${stats.components} components`);
+
+// Get a specific component constructor
+const ComponentClass = getComponent('my-component');
+```
+
+### Component Management
+
+Track and retrieve component instances across your application:
+
+```typescript
+import { ComponentManager } from '@sygnal/sse';
+
+const manager = new ComponentManager();
+
+// Register component instances
+manager.registerComponent('navigation', navInstance);
+manager.registerComponent('navigation', mobileNavInstance);
+
+// Retrieve all instances of a type
+const navComponents = manager.getComponentsByType<Navigation>('navigation');
+
+// Get all registered component types
+const types = manager.getComponentTypes(); // ['navigation', 'slider', 'modal']
+
+// Get total count
+const count = manager.getTotalCount();
+
+// Clear all instances
+manager.clear();
+```
+
+### Component Initialization
+
+Automatically discover and initialize components in the DOM:
+
+```typescript
+import { initializeComponents } from '@sygnal/sse';
+
+// Basic initialization (uses defaults)
+initializeComponents();
+
+// Advanced initialization with options
+initializeComponents({
+  selector: '[data-component]',           // Custom selector
+  attributeName: 'data-component',        // Custom attribute name
+  componentManager: customManager,        // Custom ComponentManager instance
+  logSummary: true,                       // Log initialization summary
+
+  // Custom callbacks
+  onComponentInit: (name, instance, element) => {
+    console.log(`Initialized ${name} on`, element);
+  },
+
+  onError: (error, componentName, element) => {
+    console.error(`Error in ${componentName}:`, error);
+  },
+
+  onUnknownComponent: (componentName, element) => {
+    console.warn(`Unknown component: ${componentName}`);
+  }
+});
+```
+
+**HTML Usage:**
+
+```html
+<div data-component="my-component">
+  <!-- Component content -->
+</div>
+
+<nav data-component="navigation">
+  <!-- Navigation content -->
+</nav>
+```
 
 ### Page Utilities
 
@@ -82,9 +224,24 @@ const headers = await Page.getResponseHeaders('https://api.example.com');
 
 ### Route Dispatcher
 
-Organize your code by page or route with automatic execution:
+Organize your code by page or route with automatic execution. Works seamlessly with the decorator system:
 
-```javascript
+```typescript
+import { RouteDispatcher, getAllPages } from '@sygnal/sse';
+import { Site } from './site';
+
+// Use with decorator-registered pages
+const dispatcher = new RouteDispatcher(Site);
+dispatcher.routes = getAllPages(); // Auto-populated from @page decorators
+
+// Setup and execute the matching route
+dispatcher.setupRoute();
+dispatcher.execRoute();
+```
+
+**Manual Route Registration (alternative):**
+
+```typescript
 import { RouteDispatcher } from '@sygnal/sse';
 
 // Define a route module
@@ -104,7 +261,7 @@ class ProductsPage {
   }
 }
 
-// Create dispatcher and register routes
+// Create dispatcher and register routes manually
 const dispatcher = new RouteDispatcher();
 dispatcher.routes = {
   '/': HomePage,
@@ -225,6 +382,10 @@ sse-core/
 │   ├── init.ts               # SSE initialization
 │   ├── page.ts               # Page utility class
 │   ├── routeDispatcher.ts    # Route-based module execution
+│   ├── registry.ts           # Decorator system (@page, @component)
+│   ├── component-manager.ts  # Component instance tracking
+│   ├── component-init.ts     # Component initialization logic
+│   ├── types.ts              # Framework type definitions
 │   ├── script.ts             # ScriptElement and configuration
 │   ├── debug.ts              # Debug utilities
 │   └── request.ts            # Request utilities
@@ -232,7 +393,8 @@ sse-core/
 ├── package.json
 ├── tsconfig.json
 ├── LICENSE                   # MIT License
-└── README.md
+├── README.md
+└── AGENTS.md                 # Architecture documentation for AI agents
 ```
 
 ## 🛠️ Development
@@ -256,7 +418,19 @@ The project compiles to ES6 modules with the following settings:
 - **Module:** ES6
 - **Source Maps:** Enabled
 - **Strict Mode:** Enabled
+- **Experimental Decorators:** Enabled (required for `@page` and `@component`)
 - **Output:** `dist/`
+
+**Note:** Projects using SSE must enable experimental decorators in their `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}
+```
 
 ## 📖 Documentation
 

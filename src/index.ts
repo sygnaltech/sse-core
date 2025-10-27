@@ -5,10 +5,19 @@
 
 import { Page } from './page';
 
+// Core exports
 export * from './page';
 export * from './debug';
 export * from './init';
 export * from './routeDispatcher';
+
+// Decorator system
+export * from './registry';
+export * from './types';
+
+// Component management
+export * from './component-manager';
+export * from './component-init';
 
 interface SSEGlobalDataType {
     baseUrl?: string;  
