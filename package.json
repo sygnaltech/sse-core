@@ -22,7 +22,7 @@
     "bugs": {
         "url": "https://github.com/sygnaltech/sse-core/issues"
     },
-    "homepage": "https://github.com/sygnaltech/sse-core#readme",    
+    "homepage": "https://github.com/sygnaltech/sse-core#readme",
     "devDependencies": {
         "@types/js-cookie": "^3.0.6",
         "@types/node": "^14.0.0",
