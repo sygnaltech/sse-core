@@ -1,6 +1,6 @@
 {
     "name": "@sygnal/sse",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "Core functionality for Sygnal Site Engine (SSE)",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -14,11 +14,15 @@
         "email": "mike@sygnal.com",
         "url": "https://www.sygnal.com"
     },
-    "license": "SEE LICENSE IN LICENSE",
+    "license": "MIT",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/sygnaltech/sse-core.git"
     },
+    "bugs": {
+        "url": "https://github.com/sygnaltech/sse-core/issues"
+    },
+    "homepage": "https://github.com/sygnaltech/sse-core#readme",    
     "devDependencies": {
         "@types/js-cookie": "^3.0.6",
         "@types/node": "^14.0.0",

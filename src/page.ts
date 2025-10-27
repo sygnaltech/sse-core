@@ -1,4 +1,8 @@
 
+/* SPDX-License-Identifier: MIT
+ * Copyright (C) 2024 Sygnal Technology Group
+ */
+
 
 // Determine Webflow breakpoint?
 

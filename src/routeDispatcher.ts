@@ -1,3 +1,8 @@
+
+/* SPDX-License-Identifier: MIT
+ * Copyright (C) 2024 Sygnal Technology Group
+ */
+
 /*
  * Sygnal
  * Route Dispatcher

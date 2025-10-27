@@ -1,4 +1,8 @@
 
+/* SPDX-License-Identifier: MIT
+ * Copyright (C) 2024 Sygnal Technology Group
+ */
+
 interface ScriptConfig {
 
     /** The type of the script, e.g., "text/javascript". */
