@@ -4,7 +4,6 @@
  */
 
 import { IModule } from './routeDispatcher';
-import { WebflowPageInfo } from './page-base';
 
 /**
  * Component-specific context information
@@ -21,9 +20,6 @@ export interface ComponentContext {
 
   /** All data attributes on the component element */
   dataAttributes: DOMStringMap;
-
-  /** Page-level Webflow context */
-  pageInfo: WebflowPageInfo;
 }
 
 /**
@@ -33,7 +29,7 @@ export interface ComponentContext {
  *
  * @example
  * ```typescript
- * import { ComponentBase, component } from '@sygnal/sse-core';
+ * import { ComponentBase, PageBase, component } from '@sygnal/sse-core';
  *
  * @component('navigation')
  * export class Navigation extends ComponentBase {
@@ -43,6 +39,13 @@ export interface ComponentContext {
  *   }
  *
  *   protected async onLoad(): Promise<void> {
+ *     // Access page info via PageBase singleton
+ *     const page = PageBase.getCurrentPage();
+ *     if (page) {
+ *       console.log('Collection ID:', page.pageInfo.collectionId);
+ *       console.log('Item Slug:', page.pageInfo.itemSlug);
+ *     }
+ *
  *     // Your component logic here
  *     this.element.addEventListener('click', () => {
  *       console.log('Clicked!');
@@ -74,49 +77,18 @@ export abstract class ComponentBase implements IModule {
   }
 
   /**
-   * Detects and extracts component-specific context from the element and page.
+   * Detects and extracts component-specific context from the element.
    *
    * @param element The component's root element
    * @returns ComponentContext object with all detected context
    */
   private detectComponentContext(element: HTMLElement): ComponentContext {
-    const html = document.documentElement;
-    const url = new URL(window.location.href);
-
     return {
       element: element,
       name: element.getAttribute('data-component'),
       id: element.getAttribute('data-component-id'),
       dataAttributes: element.dataset,
-      pageInfo: {
-        path: window.location.pathname,
-        pageId: html.getAttribute('data-wf-page'),
-        siteId: html.getAttribute('data-wf-site'),
-        collectionId: html.getAttribute('data-wf-collection'),
-        itemId: html.getAttribute('data-wf-item'),
-        itemSlug: this.extractItemSlug(),
-        queryParams: url.searchParams,
-        hash: window.location.hash,
-        url: window.location.href,
-      }
     };
-  }
-
-  /**
-   * Attempts to extract the collection item slug from the URL path.
-   * This is a best-effort extraction based on common Webflow URL patterns.
-   *
-   * @returns The item slug or null if not detected
-   */
-  private extractItemSlug(): string | null {
-    const pathParts = window.location.pathname.split('/').filter(p => p);
-
-    // If we have a collection item ID, the last path segment is typically the slug
-    if (document.documentElement.hasAttribute('data-wf-item') && pathParts.length > 0) {
-      return pathParts[pathParts.length - 1];
-    }
-
-    return null;
   }
 
   /**
