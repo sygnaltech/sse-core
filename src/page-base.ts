@@ -12,11 +12,17 @@ export interface WebflowPageInfo {
   /** Current page path */
   path: string;
 
+  /** Webflow domain (from data-wf-domain attribute) */
+  domain: string | null;
+
   /** Webflow page ID (from data-wf-page attribute) */
   pageId: string | null;
 
   /** Webflow site ID (from data-wf-site attribute) */
   siteId: string | null;
+
+  /** Page language (from lang attribute) */
+  lang: string | null;
 
   /** Collection ID if this is a collection page (from data-wf-collection attribute) */
   collectionId: string | null;
@@ -24,7 +30,7 @@ export interface WebflowPageInfo {
   /** Item ID if this is a collection item page (from data-wf-item attribute) */
   itemId: string | null;
 
-  /** Collection item slug if available */
+  /** Collection item slug (from data-wf-item-slug attribute) */
   itemSlug: string | null;
 
   /** Query parameters from URL */
@@ -60,6 +66,12 @@ export interface WebflowPageInfo {
 export abstract class PageBase implements IModule {
 
   /**
+   * Static reference to the current page instance.
+   * Set during setup() phase when the page is activated.
+   */
+  private static currentPageInstance: PageBase | null = null;
+
+  /**
    * Webflow page context information.
    * Automatically populated during construction.
    */
@@ -68,6 +80,31 @@ export abstract class PageBase implements IModule {
   constructor() {
     // Detect Webflow page information on instantiation
     this.pageInfo = this.detectWebflowContext();
+  }
+
+  /**
+   * Get the current active page instance.
+   * Available after the page's setup() method has been called.
+   *
+   * @returns The current PageBase instance, or null if no page is active
+   *
+   * @example
+   * ```typescript
+   * // In a component - get base page reference
+   * const page = PageBase.getCurrentPage();
+   * if (page) {
+   *   console.log('Collection ID:', page.pageInfo.collectionId);
+   * }
+   *
+   * // Get specific page type if needed
+   * const listingPage = PageBase.getCurrentPage<ListingPage>();
+   * if (listingPage) {
+   *   listingPage.someCustomMethod();
+   * }
+   * ```
+   */
+  static getCurrentPage<T extends PageBase = PageBase>(): T | null {
+    return PageBase.currentPageInstance as T | null;
   }
 
   /**
@@ -82,11 +119,13 @@ export abstract class PageBase implements IModule {
 
     return {
       path: window.location.pathname,
+      domain: html.getAttribute('data-wf-domain'),
       pageId: html.getAttribute('data-wf-page'),
       siteId: html.getAttribute('data-wf-site'),
+      lang: html.getAttribute('lang'),
       collectionId: html.getAttribute('data-wf-collection'),
       itemId: html.getAttribute('data-wf-item'),
-      itemSlug: this.extractItemSlug(),
+      itemSlug: html.getAttribute('data-wf-item-slug'),
       queryParams: url.searchParams,
       hash: window.location.hash,
       url: window.location.href,
@@ -94,27 +133,13 @@ export abstract class PageBase implements IModule {
   }
 
   /**
-   * Attempts to extract the collection item slug from the URL path.
-   * This is a best-effort extraction based on common Webflow URL patterns.
-   *
-   * @returns The item slug or null if not detected
-   */
-  private extractItemSlug(): string | null {
-    const pathParts = window.location.pathname.split('/').filter(p => p);
-
-    // If we have a collection item ID, the last path segment is typically the slug
-    if (document.documentElement.hasAttribute('data-wf-item') && pathParts.length > 0) {
-      return pathParts[pathParts.length - 1];
-    }
-
-    return null;
-  }
-
-  /**
    * Framework lifecycle method - called synchronously during page setup.
-   * Runs framework detection first, then calls onPrepare() for consumer code.
+   * Registers this page as the current page, then calls onPrepare() for consumer code.
    */
   setup(): void {
+    // Register this page as the current active page
+    PageBase.currentPageInstance = this;
+
     this.onPrepare();
   }
 
