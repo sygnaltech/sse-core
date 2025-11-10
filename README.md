@@ -94,15 +94,41 @@ export class Navigation extends ComponentBase {
 **Available Context:**
 
 Pages get `pageInfo`:
-- `path`, `url`, `hash`, `queryParams`
-- `pageId`, `siteId` (Webflow IDs)
-- `collectionId`, `itemId`, `itemSlug` (for CMS pages)
+- `path`, `url`, `hash`, `queryParams` - URL information
+- `domain` - Webflow domain (data-wf-domain)
+- `pageId`, `siteId` - Webflow IDs
+- `lang` - Page language (lang attribute)
+- `collectionId`, `itemId`, `itemSlug` - CMS collection data
 
 Components get `context`:
 - `element` - The component's HTMLElement
 - `name`, `id` - From data attributes
 - `dataAttributes` - All data-* attributes
-- `pageInfo` - Full page context
+
+**Accessing Page Info from Components:**
+
+Components can access the current page via `PageBase.getCurrentPage()`:
+
+```typescript
+import { ComponentBase, PageBase, component } from '@sygnal/sse-core';
+
+@component('my-component')
+export class MyComponent extends ComponentBase {
+  protected async onLoad(): Promise<void> {
+    // Get current page reference
+    const page = PageBase.getCurrentPage();
+
+    if (page) {
+      // Access page info
+      console.log('Collection ID:', page.pageInfo.collectionId);
+      console.log('Item Slug:', page.pageInfo.itemSlug);
+      console.log('Page ID:', page.pageInfo.pageId);
+    }
+
+    // Component works across all pages without knowing page type!
+  }
+}
+```
 
 ### Decorator System
 
