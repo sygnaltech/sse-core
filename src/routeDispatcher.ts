@@ -36,6 +36,10 @@ export class RouteDispatcher {
     routes!: Routes;
     _SiteClass: RouteHandlerClass;
 
+    // Store instances to preserve state between setup() and exec()
+    private siteInstance: IModule | null = null;
+    private pageInstance: IModule | null = null;
+
     constructor(SiteClass: RouteHandlerClass) {
         this._SiteClass = SiteClass;
     }
@@ -58,37 +62,29 @@ export class RouteDispatcher {
     
     setupRoute() {
 
-        // Pre-init site-level 
-        const site = new this._SiteClass();
-        site.setup(); 
-//        (new Site().setup());
+        // Create and store site instance
+        this.siteInstance = new this._SiteClass();
+        this.siteInstance.setup();
 
-        // Pre-init route-level
+        // Create and store page instance
         const path = window.location.pathname;
         const HandlerClass = this.matchRoute(path);
         if (HandlerClass) {
-            const handlerInstance = new HandlerClass();
-            handlerInstance.setup(); 
-        } else {
-//            console.log('No specific function for this path.');
+            this.pageInstance = new HandlerClass();
+            this.pageInstance.setup();
         }
     }
 
     execRoute() {
 
-        // Init site-level
-        const site = new this._SiteClass();
-        site.exec(); 
-//        (new Site().exec());
+        // Reuse stored site instance
+        if (this.siteInstance) {
+            this.siteInstance.exec();
+        }
 
-        // Init route-level
-        const path = window.location.pathname;
-        const HandlerClass = this.matchRoute(path);
-        if (HandlerClass) {
-            const handlerInstance = new HandlerClass();
-            handlerInstance.exec(); 
-        } else {
-//            console.log('No specific function for this path.');
+        // Reuse stored page instance
+        if (this.pageInstance) {
+            this.pageInstance.exec();
         }
     }
     
