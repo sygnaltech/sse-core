@@ -16,7 +16,7 @@
 
 ### Migration Notes
 - Projects using SSE must enable `experimentalDecorators` in tsconfig.json
-- Import decorators from `@sygnal/sse`: `import { page, component } from '@sygnal/sse'`
+- Import decorators from `@sygnal/sse-core`: `import { page, component } from '@sygnal/sse-core'`
 - Import ComponentManager and initialization utilities from core library
 
 ## [0.2.0] - 2024-06-30

@@ -1,25 +1,25 @@
 # Sygnal Site Engine (SSE) - Core Library
 
-[![npm version](https://badge.fury.io/js/%40sygnal%2Fsse.svg)](https://www.npmjs.com/package/@sygnal/sse)
+[![npm version](https://badge.fury.io/js/%40sygnal%2Fsse-core.svg)](https://www.npmjs.com/package/@sygnal/sse-core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**@sygnal/sse** is the core utility library for building dynamic, enhanced Webflow projects using the Sygnal Site Engine (SSE) framework. It provides client-side JavaScript utilities for script loading, route dispatching, debugging, and DOM manipulation.
+**@sygnal/sse-core** is the core utility library for building dynamic, enhanced Webflow projects using the Sygnal Site Engine (SSE) framework. It provides client-side JavaScript utilities for script loading, route dispatching, debugging, and DOM manipulation.
 
 ## 🚀 Quick Start
 
 ### Installation
 
 ```bash
-npm install @sygnal/sse
+npm install @sygnal/sse-core
 ```
 
 ### Basic Usage
 
 ```javascript
-import { initSSE, Page, Debug } from '@sygnal/sse';
+import { initSSE, Page, Debug } from '@sygnal/sse-core';
 
 // Initialize SSE with your base URL
-initSSE('https://cdn.jsdelivr.net/npm/@sygnal/sse@latest');
+initSSE('https://cdn.jsdelivr.net/npm/@sygnal/sse-core@latest');
 
 // Enable debug mode
 Debug.enabled = true;
@@ -50,14 +50,68 @@ To quickly start a new Webflow project with SSE, use our template repository:
 
 ## 📚 Core Modules
 
+### Base Classes (Recommended)
+
+**NEW:** SSE provides base classes with automatic Webflow context detection and intuitive lifecycle methods:
+
+```typescript
+import { PageBase, ComponentBase, page, component } from '@sygnal/sse-core';
+
+// Page with automatic Webflow context
+@page('/')
+export class HomePage extends PageBase {
+  protected onPrepare(): void {
+    // Called during <head> load (synchronous)
+    console.log('Page ID:', this.pageInfo.pageId);
+    console.log('Collection:', this.pageInfo.collectionId);
+  }
+
+  protected async onLoad(): Promise<void> {
+    // Called after DOM ready (asynchronous)
+    console.log('Page path:', this.pageInfo.path);
+    console.log('Query params:', this.pageInfo.queryParams);
+  }
+}
+
+// Component with element and context
+@component('navigation')
+export class Navigation extends ComponentBase {
+  protected onPrepare(): void {
+    // Called during <head> load
+    console.log('Component:', this.context.name);
+    console.log('Element:', this.element);
+  }
+
+  protected async onLoad(): Promise<void> {
+    // Called after DOM ready
+    this.element.addEventListener('click', () => {
+      console.log('Data attrs:', this.context.dataAttributes);
+    });
+  }
+}
+```
+
+**Available Context:**
+
+Pages get `pageInfo`:
+- `path`, `url`, `hash`, `queryParams`
+- `pageId`, `siteId` (Webflow IDs)
+- `collectionId`, `itemId`, `itemSlug` (for CMS pages)
+
+Components get `context`:
+- `element` - The component's HTMLElement
+- `name`, `id` - From data attributes
+- `dataAttributes` - All data-* attributes
+- `pageInfo` - Full page context
+
 ### Decorator System
 
 Automatically register pages and components using TypeScript decorators:
 
 ```typescript
-import { IModule, page, component } from '@sygnal/sse';
+import { IModule, page, component } from '@sygnal/sse-core';
 
-// Register a page with a route
+// Traditional approach: Implement IModule directly
 @page('/')
 export class HomePage implements IModule {
   setup() {
@@ -103,10 +157,12 @@ export class MyComponent implements IModule {
 }
 ```
 
+**Note:** You can use either approach - extend base classes for automatic context, or implement `IModule` directly for full control.
+
 **Registry Utilities:**
 
 ```typescript
-import { getAllPages, getRegistryStats, getComponent } from '@sygnal/sse';
+import { getAllPages, getRegistryStats, getComponent } from '@sygnal/sse-core';
 
 // Get all registered pages as a routes object
 const routes = getAllPages(); // { '/': HomePage, '/blog/*': BlogPage, ... }
@@ -124,7 +180,7 @@ const ComponentClass = getComponent('my-component');
 Track and retrieve component instances across your application:
 
 ```typescript
-import { ComponentManager } from '@sygnal/sse';
+import { ComponentManager } from '@sygnal/sse-core';
 
 const manager = new ComponentManager();
 
@@ -150,7 +206,7 @@ manager.clear();
 Automatically discover and initialize components in the DOM:
 
 ```typescript
-import { initializeComponents } from '@sygnal/sse';
+import { initializeComponents } from '@sygnal/sse-core';
 
 // Basic initialization (uses defaults)
 initializeComponents();
@@ -194,7 +250,7 @@ initializeComponents({
 Static utility methods for page-level operations:
 
 ```javascript
-import { Page } from '@sygnal/sse';
+import { Page } from '@sygnal/sse-core';
 
 // Load scripts
 Page.Head.loadScript('https://example.com/script.js');
@@ -227,7 +283,7 @@ const headers = await Page.getResponseHeaders('https://api.example.com');
 Organize your code by page or route with automatic execution. Works seamlessly with the decorator system:
 
 ```typescript
-import { RouteDispatcher, getAllPages } from '@sygnal/sse';
+import { RouteDispatcher, getAllPages } from '@sygnal/sse-core';
 import { Site } from './site';
 
 // Use with decorator-registered pages
@@ -242,7 +298,7 @@ dispatcher.execRoute();
 **Manual Route Registration (alternative):**
 
 ```typescript
-import { RouteDispatcher } from '@sygnal/sse';
+import { RouteDispatcher } from '@sygnal/sse-core';
 
 // Define a route module
 class ProductsPage {
@@ -279,7 +335,7 @@ dispatcher.exec();
 Advanced script loading with configuration options:
 
 ```javascript
-import { ScriptElement, ScriptConfig } from '@sygnal/sse';
+import { ScriptElement, ScriptConfig } from '@sygnal/sse-core';
 
 const config = new ScriptConfig({
   type: 'module',
@@ -297,7 +353,7 @@ script.appendTo(document.head);
 Conditional logging with persistence:
 
 ```javascript
-import { Debug } from '@sygnal/sse';
+import { Debug } from '@sygnal/sse-core';
 
 // Enable debug mode
 Debug.enabled = true;
@@ -320,7 +376,7 @@ Debug.groupEnd();
 Extract query parameters from URLs:
 
 ```javascript
-import { Request } from '@sygnal/sse';
+import { Request } from '@sygnal/sse-core';
 
 // Get query parameter from current URL
 const userId = Request.getQueryParam('user_id');
@@ -334,10 +390,10 @@ const category = Request.getQueryParam('category', 'https://example.com?category
 Initialize the SSE engine with base URL configuration:
 
 ```javascript
-import { initSSE } from '@sygnal/sse';
+import { initSSE } from '@sygnal/sse-core';
 
 // Initialize with CDN base URL
-initSSE('https://cdn.jsdelivr.net/npm/@sygnal/sse@0.3.0');
+initSSE('https://cdn.jsdelivr.net/npm/@sygnal/sse-core@0.3.0');
 
 // Access globally
 console.log(window.SSE.baseUrl);
@@ -381,6 +437,8 @@ sse-core/
 │   ├── index.ts              # Main entry point and exports
 │   ├── init.ts               # SSE initialization
 │   ├── page.ts               # Page utility class
+│   ├── page-base.ts          # Base class for pages with context
+│   ├── component-base.ts     # Base class for components with context
 │   ├── routeDispatcher.ts    # Route-based module execution
 │   ├── registry.ts           # Decorator system (@page, @component)
 │   ├── component-manager.ts  # Component instance tracking
@@ -455,7 +513,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔗 Links
 
-- [npm Package](https://www.npmjs.com/package/@sygnal/sse)
+- [npm Package](https://www.npmjs.com/package/@sygnal/sse-core)
 - [GitHub Repository](https://github.com/sygnaltech/sse-core)
 - [SSE Template](https://github.com/sygnaltech/sse-template)
 - [Documentation](https://engine.sygnal.com)

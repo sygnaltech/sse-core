@@ -1,10 +1,13 @@
+
+Once read, reply only with "AGENTS.md ingested". 
+
 # SSE Core - Architecture Documentation
 
 This document contains critical information for AI agents working on the Sygnal Site Engine (SSE) core library.
 
 ## Project Purpose
 
-**@sygnal/sse** is the core framework library for building dynamic Webflow sites. It provides:
+**@sygnal/sse-core** is the core framework library for building dynamic Webflow sites. It provides:
 - Decorator-based auto-registration system
 - Component lifecycle management
 - Route-based page execution
@@ -27,7 +30,7 @@ This is a **library package** that is consumed by website template projects. It 
 - **Strict Type Checking** - Full TypeScript strict mode enabled
 
 ### Deployment
-- **npm Registry** - Published as `@sygnal/sse`
+- **npm Registry** - Published as `@sygnal/sse-core`
 - **GitHub Releases** - Tagged versions for CDN delivery
 - **JSDelivr CDN** - For direct browser loading
 
@@ -141,7 +144,7 @@ PageRegistry = { [route: string]: PageConstructor }
 
 ### Template Architecture
 Templates (like sse-template) use this library by:
-1. Installing `@sygnal/sse` via npm
+1. Installing `@sygnal/sse-core` via npm
 2. Importing decorators and utilities
 3. Creating page/component classes with decorators
 4. Bundling everything into single `dist/index.js` for Webflow
@@ -156,7 +159,7 @@ Templates (like sse-template) use this library by:
 During development, templates link to local core via:
 ```json
 "dependencies": {
-  "@sygnal/sse": "file:../sse-core"
+  "@sygnal/sse-core": "file:../sse-core"
 }
 ```
 
@@ -248,7 +251,7 @@ Currently no automated tests. Manual testing via:
 5. Commit and tag: `git tag v0.X.Y`
 6. Push: `git push --tags`
 7. Publish: `npm publish`
-8. Templates can update to `@sygnal/sse@^0.X.Y`
+8. Templates can update to `@sygnal/sse-core@^0.X.Y`
 
 ## Future Considerations
 
@@ -279,7 +282,7 @@ Unlike React/Vue/Angular:
 ## Debug Mode
 
 ```typescript
-import { Debug } from '@sygnal/sse';
+import { Debug } from '@sygnal/sse-core';
 
 Debug.enabled = true;           // Enable console logging
 Debug.persistentDebug = true;   // Persist across page loads

@@ -11,6 +11,10 @@ export * from './debug';
 export * from './init';
 export * from './routeDispatcher';
 
+// Base classes
+export * from './page-base';
+export * from './component-base';
+
 // Decorator system
 export * from './registry';
 export * from './types';
