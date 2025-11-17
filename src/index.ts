@@ -1,4 +1,3 @@
-
 /* SPDX-License-Identifier: MIT
  * Copyright (C) 2024 Sygnal Technology Group
  */
@@ -22,6 +21,9 @@ export * from './types';
 // Component management
 export * from './component-manager';
 export * from './component-init';
+
+// FIX System (Functional Interactions)
+export * from './fix';
 
 interface SSEGlobalDataType {
     baseUrl?: string;  
