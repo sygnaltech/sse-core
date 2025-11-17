@@ -1,5 +1,6 @@
 
-Once read, reply only with "AGENTS.md ingested". 
+Once read, reply with "AGENTS.md ingested". Do not regurgitate or summarize what you read here.  If you read it in the context of answering a prompt, just continue with your response as normal afterwards. 
+
 
 # SSE Core - Architecture Documentation
 
