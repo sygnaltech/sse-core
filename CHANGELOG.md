@@ -1,5 +1,39 @@
 # Changelog
 
+## [2.1.0] - 2025-11-18
+### Added - FIX System (Functional Interactions)
+- **FIX Core Infrastructure** - Complete event-driven interaction system
+  - `TriggerBase`, `ActionBase`, `EventBase` - Base classes for FIX components
+  - `FIXRegistry` - Central registry for triggers and actions
+  - `EventRegistry` - Event management and execution
+  - `@trigger()` and `@action()` decorators for auto-registration
+- **Standard Triggers**
+  - `trigger:click` - Click event trigger (TriggerClick)
+- **Standard Actions**
+  - `action:click` - Click action (ActionClick)
+- **Standard Events**
+  - `EventDefault` - Parallel execution (fire-and-forget)
+  - `EventSequential` - Sequential execution with async/await support
+- **FIX Utilities**
+  - `initializeFIX()` - Initialize FIX system and scan DOM
+  - `registerProgrammaticAction()` - Register actions without DOM elements
+  - `FIXDebug` - Debug utilities for inspecting triggers, actions, events, and stats
+
+### Changed
+- Added `moduleResolution: "node"` to tsconfig.json for better module resolution
+- Enhanced TypeScript configuration to support FIX decorator system
+- Updated main exports to include all FIX components
+- Auto-import standard triggers and actions when sse-core is imported
+
+### Migration Notes
+- FIX is fully backward compatible - existing SSE-only projects continue to work
+- To use FIX in projects:
+  1. Import FIX functions: `import { initializeFIX, FIXDebug, FIXRegistry, registerProgrammaticAction } from '@sygnal/sse-core'`
+  2. Call `initializeFIX()` after `initializeComponents()` in your initialization code
+  3. Standard triggers/actions are automatically available
+  4. Create custom actions by extending `ActionBase` and using `@action()` decorator
+- See sse-template `docs/02-MIGRATION-FIX.md` for detailed migration guide
+
 ## [0.3.0] - 2025-10-27
 ### Added
 - **Decorator System** - `@page` and `@component` decorators for auto-registration
