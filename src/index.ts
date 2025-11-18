@@ -36,6 +36,8 @@ export {
   EventSequential,
   initializeFIX,
   registerProgrammaticAction,
+  registerActionType,
+  registerTriggerType,
   FIXDebug
 } from '@sygnal/fix';
 

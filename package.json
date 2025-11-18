@@ -1,6 +1,6 @@
 {
     "name": "@sygnal/sse-core",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "description": "Core functionality for Sygnal Site Engine (SSE)",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -29,7 +29,7 @@
         "typescript": "^4.0.0"
     },
     "dependencies": {
-        "@sygnal/fix": "^0.1.0",
+        "@sygnal/fix": "^0.1.1",
         "js-cookie": "^3.0.5"
     }
 }
