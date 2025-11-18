@@ -22,8 +22,22 @@ export * from './types';
 export * from './component-manager';
 export * from './component-init';
 
-// FIX System (Functional Interactions)
-export * from './fix';
+// FIX System (Functional Interactions) - re-export shared package
+export {
+  TriggerBase,
+  type TriggerData,
+  ActionBase,
+  EventBase,
+  FIXRegistry,
+  trigger,
+  action,
+  EventRegistry,
+  EventDefault,
+  EventSequential,
+  initializeFIX,
+  registerProgrammaticAction,
+  FIXDebug
+} from '@sygnal/fix';
 
 interface SSEGlobalDataType {
     baseUrl?: string;  
