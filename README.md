@@ -107,7 +107,7 @@ Components get `context`:
 
 **Accessing Page Info from Components:**
 
-Components can access the current page via `PageBase.getCurrentPage()`:
+Components can access the current page via `PageBase.getCurrentPage()` and read its Webflow context through `getPageInfo()`:
 
 ```typescript
 import { ComponentBase, PageBase, component } from '@sygnal/sse-core';
@@ -119,16 +119,55 @@ export class MyComponent extends ComponentBase {
     const page = PageBase.getCurrentPage();
 
     if (page) {
-      // Access page info
-      console.log('Collection ID:', page.pageInfo.collectionId);
-      console.log('Item Slug:', page.pageInfo.itemSlug);
-      console.log('Page ID:', page.pageInfo.pageId);
+      // Access page info via public accessor
+      const info = page.getPageInfo();
+      console.log('Collection ID:', info.collectionId);
+      console.log('Item Slug:', info.itemSlug);
+      console.log('Page ID:', info.pageId);
     }
 
     // Component works across all pages without knowing page type!
   }
 }
 ```
+
+### Functional Interactions (FIX)
+
+SSE re-exports the FIX trigger/action system so you can wire declarative interactions without pulling an extra dependency.
+
+```typescript
+import {
+  initializeFIX,
+  registerTriggerType,
+  registerActionType,
+  registerProgrammaticAction,
+  EventRegistry,
+  EventSequential
+} from '@sygnal/sse-core';
+
+// Make custom trigger/action types available to FIX attributes
+registerTriggerType('submit', TriggerSubmit);
+registerActionType('api-call', ActionApiCall);
+
+// Define events and start scanning the DOM
+EventRegistry.registerEvent('hero-enter', new EventSequential('hero-enter'));
+initializeFIX();
+
+// Optional: actions that are not tied to a DOM element
+registerProgrammaticAction('log', 'hero-enter', ActionLog);
+```
+
+Use HTML attributes to bind triggers and actions to events:
+
+```html
+<button trigger:click="hero-enter" trigger:click:data:section="hero"></button>
+<div action:api-call="hero-enter"></div>
+```
+
+When to use which:
+- `registerTriggerType(name, TriggerCtor)` — expose a trigger class for `trigger:name="event"` attributes.
+- `registerActionType(name, ActionCtor)` — expose an action class for `action:name="event"` attributes.
+- `registerProgrammaticAction(name, event, ActionCtor)` — register an action instance immediately (no element) for code-driven behaviors.
 
 ### Decorator System
 

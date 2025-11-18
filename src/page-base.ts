@@ -83,6 +83,14 @@ export abstract class PageBase implements IModule {
   }
 
   /**
+   * Public accessor for page context data so that components
+   * can safely read Webflow metadata from the current page instance.
+   */
+  public getPageInfo(): WebflowPageInfo {
+    return this.pageInfo;
+  }
+
+  /**
    * Get the current active page instance.
    * Available after the page's setup() method has been called.
    *
