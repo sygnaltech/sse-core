@@ -18,15 +18,16 @@ npm install @sygnal/sse-core
 ```javascript
 import { initSSE, Page, Debug } from '@sygnal/sse-core';
 
-// Initialize SSE with your base URL
-initSSE('https://cdn.jsdelivr.net/npm/@sygnal/sse-core@latest');
+// Initialize SSE — records the script base URL on window.SSE (takes no arguments)
+initSSE();
 
-// Enable debug mode
-Debug.enabled = true;
-Debug.debug('SSE initialized!');
+// Enable debug logging (Debug is instantiable; construct one with a label)
+const debug = new Debug('[Site]');
+debug.enabled = true;
+debug.debug('SSE initialized!');
 
-// Load a script dynamically
-Page.loadScript('https://example.com/script.js');
+// Load a script dynamically (use Page.Head or Page.Body)
+Page.Head.loadScript('https://example.com/script.js');
 ```
 
 ## 📦 Template Repository
@@ -278,8 +279,8 @@ initializeComponents();
 
 // Advanced initialization with options
 initializeComponents({
-  selector: '[data-component]',           // Custom selector
-  attributeName: 'data-component',        // Custom attribute name
+  selector: '[data-widget]',              // Override default '[sse-component]'
+  attributeName: 'data-widget',           // Override default 'sse-component'
   componentManager: customManager,        // Custom ComponentManager instance
   logSummary: true,                       // Log initialization summary
 
@@ -301,11 +302,11 @@ initializeComponents({
 **HTML Usage:**
 
 ```html
-<div data-component="my-component">
+<div sse-component="my-component">
   <!-- Component content -->
 </div>
 
-<nav data-component="navigation">
+<nav sse-component="navigation">
   <!-- Navigation content -->
 </nav>
 ```
@@ -329,7 +330,7 @@ Page.loadEngineCSS('custom-styles');
 Page.prependToTitle('New Prefix - ');
 
 // DOM traversal
-const ancestor = Page.findAncestorWithAttribute(element, 'data-component');
+const ancestor = Page.findAncestorWithAttribute(element, 'sse-component');
 const value = Page.getAncestorAttributeValue(element, 'data-id');
 
 // Unit conversion
@@ -364,26 +365,23 @@ dispatcher.execRoute();
 
 ```typescript
 import { RouteDispatcher } from '@sygnal/sse-core';
+import { Site } from './site';
 
 // Define a route module
 class ProductsPage {
-  constructor() {
-    console.log('Products page module created');
-  }
-
   setup() {
-    // Setup code runs once when route is matched
+    // Prepare phase — runs when the route is matched
     console.log('Setting up products page');
   }
 
   exec() {
-    // Exec runs after setup
+    // Load phase — runs after setup
     console.log('Executing products page logic');
   }
 }
 
-// Create dispatcher and register routes manually
-const dispatcher = new RouteDispatcher();
+// Create the dispatcher ONCE (it requires a Site class) and register routes manually
+const dispatcher = new RouteDispatcher(Site);
 dispatcher.routes = {
   '/': HomePage,
   '/products': ProductsPage,
@@ -391,8 +389,9 @@ dispatcher.routes = {
   '/blog/*': BlogPostPage
 };
 
-// Execute the matching route
-dispatcher.exec();
+// Run the matching route through both phases on the SAME instance
+dispatcher.setupRoute();
+dispatcher.execRoute();
 ```
 
 ### Script Element
@@ -417,23 +416,28 @@ script.appendTo(document.head);
 
 Conditional logging with persistence:
 
+`Debug` is an instantiable class — construct one with a label (and optional app name):
+
 ```javascript
 import { Debug } from '@sygnal/sse-core';
 
-// Enable debug mode
-Debug.enabled = true;
+// Create a logger instance
+const debug = new Debug('[Site]', 'Site');
 
-// Enable persistent debugging (survives page reloads)
-Debug.persistentDebug = true;
+// Enable debug mode for this instance
+debug.enabled = true;
+
+// Enable persistent debugging (survives page reloads, via localStorage)
+debug.persistentDebug = true;
 
 // Log messages (only when debug is enabled)
-Debug.debug('This is a debug message', { data: 'example' });
+debug.debug('This is a debug message', { data: 'example' });
 
 // Group related logs
-Debug.group('API Calls');
-Debug.debug('Fetching user data...');
-Debug.debug('Response received');
-Debug.groupEnd();
+debug.group('API Calls');
+debug.debug('Fetching user data...');
+debug.debug('Response received');
+debug.groupEnd();
 ```
 
 ### Request Utilities
@@ -443,12 +447,11 @@ Extract query parameters from URLs:
 ```javascript
 import { Request } from '@sygnal/sse-core';
 
-// Get query parameter from current URL
+// Get a query parameter from the current URL (reads window.location.search)
 const userId = Request.getQueryParam('user_id');
-
-// Get parameter from specific URL
-const category = Request.getQueryParam('category', 'https://example.com?category=books');
 ```
+
+`getQueryParam(name)` takes a single argument and always reads the current URL. To parse a different URL, use a `URLSearchParams` directly, or read `pageInfo.queryParams` on a page.
 
 ### Initialization
 
@@ -457,8 +460,9 @@ Initialize the SSE engine with base URL configuration:
 ```javascript
 import { initSSE } from '@sygnal/sse-core';
 
-// Initialize with CDN base URL
-initSSE('https://cdn.jsdelivr.net/npm/@sygnal/sse-core@0.3.0');
+// Takes no arguments — it reads the base URL from the currently executing script
+// (document.currentScript) and stores it on window.SSE.baseUrl.
+initSSE();
 
 // Access globally
 console.log(window.SSE.baseUrl);

@@ -12,10 +12,10 @@ export interface ComponentContext {
   /** The root element of this component */
   element: HTMLElement;
 
-  /** Component name from data-component attribute */
+  /** Component name from sse-component attribute */
   name: string | null;
 
-  /** Component ID from data-component-id attribute (if present) */
+  /** Component ID from sse-component-id attribute (if present) */
   id: string | null;
 
   /** All data attributes on the component element */
@@ -85,8 +85,8 @@ export abstract class ComponentBase implements IModule {
   private detectComponentContext(element: HTMLElement): ComponentContext {
     return {
       element: element,
-      name: element.getAttribute('data-component'),
-      id: element.getAttribute('data-component-id'),
+      name: element.getAttribute('sse-component'),
+      id: element.getAttribute('sse-component-id'),
       dataAttributes: element.dataset,
     };
   }
@@ -109,7 +109,9 @@ export abstract class ComponentBase implements IModule {
 
   /**
    * Override this method in your component class for synchronous preparation logic.
-   * Called during page load in the <head>, before DOM is ready.
+   * Called during the component setup phase, before onLoad(). When components are
+   * discovered with initializeComponents(), every component's onPrepare() runs
+   * before any component's onLoad(), so siblings are constructed and registered first.
    * The element and context are already available.
    */
   protected onPrepare(): void {

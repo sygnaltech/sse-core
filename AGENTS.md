@@ -96,10 +96,12 @@ export class HomePage { } // Adds to pageRegistry immediately
 
 #### 2. Component Initialization Pattern
 ```typescript
-// Scans DOM for [data-component] attributes
+// Scans DOM for [sse-component] attributes (configurable)
 // Creates instances by looking up constructors in componentRegistry
-// Calls setup() then exec() on each instance
 // Optionally registers instances in ComponentManager
+// Two-phase, mirroring pages: calls setup() on every instance (prepare),
+//   then exec() on every instance (load), so all components are prepared
+//   before any onLoad() runs
 ```
 
 #### 3. Route Dispatcher Pattern

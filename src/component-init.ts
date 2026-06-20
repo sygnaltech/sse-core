@@ -61,10 +61,11 @@ export interface ComponentInitOptions {
  * initializeComponents();
  *
  * @example
- * // With custom options
+ * // With custom options (override the defaults only if your markup
+ * // uses a different convention than the default 'sse-component')
  * initializeComponents({
- *   selector: '[data-component]',
- *   attributeName: 'data-component',
+ *   selector: '[data-widget]',
+ *   attributeName: 'data-widget',
  *   onComponentInit: (name, instance, element) => {
  *     console.log(`Initialized ${name}`);
  *   },
@@ -86,6 +87,13 @@ export function initializeComponents(options: ComponentInitOptions = {}): void {
 
   const componentElements = document.querySelectorAll<HTMLElement>(selector);
 
+  // Components follow the same two-phase lifecycle as pages: every component is
+  // constructed and prepared (setup/onPrepare) before any component is executed
+  // (exec/onLoad). Running all prepares before any loads lets a component's
+  // onLoad() safely assume sibling components already exist and are registered.
+  const prepared: { name: string; instance: IModule; element: HTMLElement }[] = [];
+
+  // Phase 1 - instantiate, register, and prepare (setup/onPrepare) every component
   componentElements.forEach(element => {
     const componentName = element.getAttribute(attributeName);
 
@@ -117,13 +125,10 @@ export function initializeComponents(options: ComponentInitOptions = {}): void {
         componentManager.registerComponent(componentName, componentInstance);
       }
 
-      // Execute the component
-      componentInstance.exec();
+      // Prepare the component (synchronous onPrepare)
+      componentInstance.setup();
 
-      // Callback on success
-      if (onComponentInit) {
-        onComponentInit(componentName, componentInstance, element);
-      }
+      prepared.push({ name: componentName, instance: componentInstance, element });
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
 
@@ -131,6 +136,27 @@ export function initializeComponents(options: ComponentInitOptions = {}): void {
         onError(err, componentName, element);
       } else {
         console.error(`Error initializing component "${componentName}":`, err, element);
+      }
+    }
+  });
+
+  // Phase 2 - execute (exec/onLoad) every prepared component
+  prepared.forEach(({ name, instance, element }) => {
+    try {
+      // Execute the component (asynchronous onLoad)
+      instance.exec();
+
+      // Callback on success
+      if (onComponentInit) {
+        onComponentInit(name, instance, element);
+      }
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+
+      if (onError) {
+        onError(err, name, element);
+      } else {
+        console.error(`Error initializing component "${name}":`, err, element);
       }
     }
   });

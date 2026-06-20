@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.2.0] - 2026-06-20
+### Changed - Component Lifecycle
+- **Two-phase component lifecycle** - `initializeComponents()` now runs components through the same two-phase lifecycle as pages: every component is constructed, registered, and prepared (`setup()` → `onPrepare()`) before any component is executed (`exec()` → `onLoad()`).
+  - Previously `initializeComponents()` called only `exec()`, so `ComponentBase.onPrepare()` never ran. Components that defined `onPrepare()` will now have it invoked.
+  - The "all prepares before any loads" ordering lets a component's `onLoad()` safely assume that sibling components are already constructed and registered with the `ComponentManager`.
+  - Error handling is split per phase: a failure during prepare (construction, registration, or `onPrepare()`) drops that component before the load phase; neither phase halts the remaining components.
+
+### Changed - Attribute Standardization
+- **`sse-` attribute prefix for component context** - `ComponentContext` now reads `name` from the `sse-component` attribute and `id` from `sse-component-id` (previously `data-component` / `data-component-id`). This aligns context detection with `initializeComponents()`, which already discovers components by `sse-component`.
+  - `ComponentContext.dataAttributes` continues to expose standard `data-*` attributes via `element.dataset`.
+
+### Documentation
+- Added `/docs` documentation set (`.hd` format): overview, getting started, architecture, pages, components, route dispatcher, utilities, FIX, API reference, and migration guide.
+- Corrected drift in `README.md` and `AGENTS.md`: `initSSE()` takes no arguments, `Debug` is instantiable (not static), `Page.Head.loadScript` (not `Page.loadScript`), single-argument `Request.getQueryParam`, the `RouteDispatcher` requires a Site class and uses `setupRoute()`/`execRoute()`, and `sse-component` markup throughout.
+- Removed `DOCS.md` (a transient GitBook update checklist); its substantive content now lives in `/docs`.
+
+### Migration Notes
+- If a component class defines `onPrepare()`, that code now executes during initialization. Review existing `onPrepare()` overrides to confirm they are safe to run.
+- If any markup or code relied on `ComponentContext.name`/`id` reading `data-component`/`data-component-id`, update those elements to use `sse-component`/`sse-component-id`.
+
 ## [2.1.0] - 2025-11-18
 ### Added - FIX System (Functional Interactions)
 - **FIX Core Infrastructure** - Complete event-driven interaction system
