@@ -1,0 +1,102 @@
+---
+title: Route Dispatcher
+version: 1
+date: 2026-06-20
+description: Wiring registered pages to URLs with RouteDispatcher, wildcard matching, and the instance-reuse rule.
+tags: [sse, routing, dispatcher]
+---
+
+<h1>Route Dispatcher</h1>
+
+<p><code>RouteDispatcher</code> connects URLs to page classes. It holds a routes table, matches the current path against it, instantiates the matching page (plus a site-wide module), and drives them through the two-phase lifecycle. It is the runtime counterpart to the <code>@page</code> decorator: decorators fill the registry; the dispatcher consumes it.</p>
+
+<section>
+  <h2>The Site class</h2>
+  <p>The constructor takes a <strong>Site class</strong> — a module that runs on every page, regardless of route. It is an <code>IModule</code> (commonly a <code>PageBase</code> subclass or a plain class) used for global concerns like analytics, navigation, or shared setup.</p>
+
+  <pre><code class="language-typescript">export class RouteDispatcher {
+  constructor(SiteClass: RouteHandlerClass);
+  routes: Routes;
+  matchRoute(path: string): RouteHandlerClass | null;
+  setupRoute(): void;   // instantiate + setup() the site and matched page
+  execRoute(): void;    // exec() the same site and page instances
+}</code></pre>
+</section>
+
+<section>
+  <h2>Standard wiring</h2>
+  <p>Populate <code>routes</code> from the registry with <code>getAllPages()</code>, then run the two phases:</p>
+
+  <pre><code class="language-typescript">import { RouteDispatcher, getAllPages } from '@sygnal/sse-core';
+import { Site } from './site';
+
+// import all page modules first so their @page decorators have fired
+import './pages';
+
+const dispatcher = new RouteDispatcher(Site);
+dispatcher.routes = getAllPages();   // { '/': HomePage, '/blog/*': BlogPage, ... }
+
+dispatcher.setupRoute();   // creates instances, runs setup()/onPrepare()
+dispatcher.execRoute();    // runs exec()/onLoad() on the SAME instances</code></pre>
+
+  <p>Routes can also be assigned manually if you are not using decorators:</p>
+
+  <pre><code class="language-typescript">const dispatcher = new RouteDispatcher(Site);
+dispatcher.routes = {
+  '/': HomePage,
+  '/products': ProductsPage,
+  '/products/*': ProductDetailsPage,
+  '/blog/*': BlogPostPage,
+};</code></pre>
+</section>
+
+<section>
+  <h2>Critical: reuse one dispatcher instance</h2>
+  <p><code>setupRoute()</code> creates the site and page instances and stores them on the dispatcher; <code>execRoute()</code> calls <code>exec()</code> on <strong>those same stored instances</strong>. Any state your <code>onPrepare()</code> set up in the prepare phase is therefore visible in <code>onLoad()</code> — but only if both calls land on the same dispatcher object.</p>
+
+  <pre><code class="language-typescript">// WRONG — two dispatchers, two sets of instances; prepare-phase state is lost
+routeDispatcher().setupRoute();   // instance A
+routeDispatcher().execRoute();    // instance B — never saw setup()</code></pre>
+
+  <pre><code class="language-typescript">// CORRECT — create once, reuse
+const dispatcher = new RouteDispatcher(Site);
+dispatcher.routes = getAllPages();
+dispatcher.setupRoute();
+dispatcher.execRoute();</code></pre>
+
+  <p>If a helper factory returns a fresh dispatcher each call, capture it in a variable once and reuse it. This is the single most common integration mistake.</p>
+</section>
+
+<section>
+  <h2>Route matching</h2>
+  <p><code>matchRoute(path)</code> walks the routes table and returns the first match:</p>
+  <ul>
+    <li><strong>Exact match</strong> — the route string equals the path (<code>/about</code> matches <code>/about</code>).</li>
+    <li><strong>Wildcard</strong> — a route ending in <code>*</code> matches any path that starts with the prefix before the <code>*</code> (<code>/blog/*</code> matches <code>/blog/</code>, <code>/blog/my-post</code>, etc.).</li>
+    <li><strong>No match</strong> — returns <code>null</code>; only the Site module runs, no page module.</li>
+  </ul>
+
+  <p>Matching is first-hit in iteration order, so place more specific exact routes before broad wildcards if both could match. The path comes from <code>window.location.pathname</code>.</p>
+</section>
+
+<section>
+  <h2>Execution sequence</h2>
+  <table>
+    <thead>
+      <tr><th>Step</th><th>Call</th><th>What happens</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td><code>new RouteDispatcher(Site)</code></td><td>Stores the Site class</td></tr>
+      <tr><td>2</td><td><code>dispatcher.routes = getAllPages()</code></td><td>Loads the route table from the registry</td></tr>
+      <tr><td>3</td><td><code>setupRoute()</code></td><td>Instantiates Site → <code>setup()</code>; matches path, instantiates the page → <code>setup()</code></td></tr>
+      <tr><td>4</td><td><code>execRoute()</code></td><td><code>exec()</code> on the stored Site, then the stored page</td></tr>
+    </tbody>
+  </table>
+
+  <p>For base-class modules, <code>setup()</code> runs framework bookkeeping then your <code>onPrepare()</code>; <code>exec()</code> runs your <code>onLoad()</code>. During the page's <code>setup()</code>, <code>PageBase</code> also records the current-page singleton so components can later reach it (see <a href="pages.hd">Pages</a>).</p>
+</section>
+
+<section>
+  <h2>Relationship to components</h2>
+  <p>The dispatcher handles <em>pages</em> only. Components are discovered separately by <a href="components.hd">initializeComponents()</a>. A typical bootstrap runs the dispatcher's two phases and then initializes components after the DOM is ready, so that <code>PageBase.getCurrentPage()</code> is already set when components run.</p>
+</section>

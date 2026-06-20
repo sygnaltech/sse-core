@@ -1,0 +1,135 @@
+---
+title: API Reference
+version: 1
+date: 2026-06-20T00:00:00.000Z
+description: Every public export of @sygnal/sse-core, grouped by module, with signatures.
+tags:
+  - sse
+  - api
+  - reference
+id: 5QLtmbl5n5d3zhZbc4tIxp
+---
+
+<h1>API Reference</h1>
+
+<p>This page lists the complete public surface of <code>@sygnal/sse-core</code> as exported from the package root. Signatures are abbreviated; see the linked topic pages for behavior and examples.</p>
+
+<section>
+  <h2>Initialization</h2>
+  <table>
+    <thead><tr><th>Export</th><th>Signature</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>initSSE</code></td><td><code>() =&gt; void</code></td><td>No arguments. Records the script base URL on <code>window.SSE.baseUrl</code>. See <a href="getting-started.hd">Getting Started</a>.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Base classes — <a href="pages.hd">Pages</a> &amp; <a href="components.hd">Components</a></h2>
+  <table>
+    <thead><tr><th>Export</th><th>Kind</th><th>Key members</th></tr></thead>
+    <tbody>
+      <tr><td><code>PageBase</code></td><td>abstract class</td><td><code>pageInfo</code>, <code>getPageInfo()</code>, <code>onPrepare()</code>, <code>onLoad()</code> (abstract), static <code>getCurrentPage&lt;T&gt;()</code></td></tr>
+      <tr><td><code>WebflowPageInfo</code></td><td>interface</td><td><code>path, url, hash, queryParams, domain, pageId, siteId, lang, collectionId, itemId, itemSlug</code></td></tr>
+      <tr><td><code>ComponentBase</code></td><td>abstract class</td><td><code>element</code>, <code>context</code>, <code>onPrepare()</code>, <code>onLoad()</code> (abstract)</td></tr>
+      <tr><td><code>ComponentContext</code></td><td>interface</td><td><code>element, name, id, dataAttributes</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Decorators &amp; registry — <a href="architecture.hd">Architecture</a></h2>
+  <table>
+    <thead><tr><th>Export</th><th>Signature</th></tr></thead>
+    <tbody>
+      <tr><td><code>page</code></td><td><code>(route: string) =&gt; ClassDecorator</code></td></tr>
+      <tr><td><code>component</code></td><td><code>(name: string) =&gt; ClassDecorator</code></td></tr>
+      <tr><td><code>getPage</code></td><td><code>(route: string) =&gt; PageConstructor | undefined</code></td></tr>
+      <tr><td><code>getAllPages</code></td><td><code>() =&gt; Record&lt;string, PageConstructor&gt;</code></td></tr>
+      <tr><td><code>getComponent</code></td><td><code>(name: string) =&gt; ComponentConstructor | undefined</code></td></tr>
+      <tr><td><code>getAllComponents</code></td><td><code>() =&gt; Map&lt;string, ComponentConstructor&gt;</code></td></tr>
+      <tr><td><code>getRegistryStats</code></td><td><code>() =&gt; { components, pages, componentNames, pageRoutes }</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Types</h2>
+  <table>
+    <thead><tr><th>Export</th><th>Definition</th></tr></thead>
+    <tbody>
+      <tr><td><code>ComponentConstructor</code></td><td><code>new (element: HTMLElement) =&gt; IModule</code></td></tr>
+      <tr><td><code>PageConstructor</code></td><td><code>new () =&gt; IModule</code></td></tr>
+      <tr><td><code>ComponentRegistry</code></td><td><code>{ [name: string]: ComponentConstructor }</code></td></tr>
+      <tr><td><code>PageRegistry</code></td><td><code>{ [route: string]: PageConstructor }</code></td></tr>
+      <tr><td><code>IModule</code></td><td><code>{ setup(): void; exec(): void }</code> (from <code>routeDispatcher</code>)</td></tr>
+      <tr><td><code>Routes</code></td><td><code>{ [path: string]: RouteHandlerClass }</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Components — <a href="components.hd">Components</a></h2>
+  <table>
+    <thead><tr><th>Export</th><th>Signature / members</th></tr></thead>
+    <tbody>
+      <tr><td><code>initializeComponents</code></td><td><code>(options?: ComponentInitOptions) =&gt; void</code></td></tr>
+      <tr><td><code>ComponentInitOptions</code></td><td><code>selector, attributeName, componentManager, logSummary, onComponentInit, onError, onUnknownComponent</code></td></tr>
+      <tr><td><code>ComponentManager</code></td><td><code>registerComponent, getComponentsByType&lt;T&gt;, getComponentTypes, getTotalCount, clear</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Routing — <a href="route-dispatcher.hd">Route Dispatcher</a></h2>
+  <table>
+    <thead><tr><th>Export</th><th>Signature / members</th></tr></thead>
+    <tbody>
+      <tr><td><code>RouteDispatcher</code></td><td><code>new (SiteClass)</code>; <code>routes</code>, <code>matchRoute(path)</code>, <code>setupRoute()</code>, <code>execRoute()</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Utilities — <a href="utilities.hd">Utilities</a></h2>
+  <table>
+    <thead><tr><th>Export</th><th>Kind</th><th>Highlights</th></tr></thead>
+    <tbody>
+      <tr><td><code>Page</code></td><td>static class</td><td><code>Head.loadScript</code>, <code>Body.loadScript</code>, <code>loadCSS</code>, <code>loadEngineCSS</code>, <code>loadStyle</code>, <code>prependToTitle</code>, <code>getCurrentScriptUrl</code>, <code>getCurrentScriptBaseUrl</code>, <code>convertToPixels</code>, <code>findAncestorWithAttribute</code>, <code>getAncestorAttributeValue</code>, <code>hasAncestorWithAttribute</code>, <code>getResponseHeader(s)</code></td></tr>
+      <tr><td><code>Debug</code></td><td>class</td><td><code>new Debug(label, appName?)</code>; <code>enabled</code>, <code>persistentDebug</code>, <code>debug()</code>, <code>group()</code>, <code>groupEnd()</code></td></tr>
+      <tr><td><code>Request</code></td><td>static class</td><td><code>getQueryParam(name): string | null</code></td></tr>
+      <tr><td><code>ScriptElement</code></td><td>class</td><td><code>new (src, config?)</code>; <code>appendTo(target)</code>, <code>prependTo(target)</code></td></tr>
+      <tr><td><code>ScriptConfig</code></td><td>interface</td><td><code>type, id, async, defer, customAttributes</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>FIX — <a href="fix.hd">Functional Interactions</a></h2>
+  <p>Re-exported from <code>@sygnal/fix</code>:</p>
+  <table>
+    <thead><tr><th>Export</th><th>Kind</th></tr></thead>
+    <tbody>
+      <tr><td><code>TriggerBase</code>, <code>ActionBase</code>, <code>EventBase</code></td><td>abstract classes</td></tr>
+      <tr><td><code>TriggerData</code></td><td>type</td></tr>
+      <tr><td><code>FIXRegistry</code>, <code>EventRegistry</code></td><td>static registries</td></tr>
+      <tr><td><code>EventDefault</code>, <code>EventSequential</code></td><td>event classes</td></tr>
+      <tr><td><code>trigger</code>, <code>action</code></td><td>decorators</td></tr>
+      <tr><td><code>initializeFIX</code></td><td><code>() =&gt; void</code></td></tr>
+      <tr><td><code>registerTriggerType</code>, <code>registerActionType</code></td><td>type registration</td></tr>
+      <tr><td><code>registerProgrammaticAction</code></td><td>element-less action registration</td></tr>
+      <tr><td><code>FIXDebug</code></td><td>console inspection helpers</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Globals</h2>
+  <table>
+    <thead><tr><th>Global</th><th>Type</th><th>Set by</th></tr></thead>
+    <tbody>
+      <tr><td><code>window.SSE</code></td><td><code>{ baseUrl?: string }</code></td><td><code>initSSE()</code></td></tr>
+      <tr><td><code>window.componentManager</code></td><td><code>ComponentManager | undefined</code></td><td>The consuming project (default target for <code>initializeComponents()</code>)</td></tr>
+    </tbody>
+  </table>
+</section>

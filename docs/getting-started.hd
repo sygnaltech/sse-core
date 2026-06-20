@@ -1,0 +1,123 @@
+---
+title: Getting Started
+version: 1
+date: 2026-06-20
+description: Install @sygnal/sse-core, initialize the engine, and create your first page.
+tags: [sse, setup, quickstart]
+---
+
+<h1>Getting Started</h1>
+
+<p>This guide covers installing the library, the project requirements it imposes, the engine entry point, dev/prod mode switching, and a minimal first page. SSE Core is consumed by a template project rather than used directly in a browser; the <a href="https://github.com/sygnaltech/sse-template">sse-template</a> repository is the recommended starting point.</p>
+
+<section>
+  <h2>Installation</h2>
+  <pre><code class="language-bash">npm install @sygnal/sse-core</code></pre>
+
+  <p>SSE relies on TypeScript decorators for auto-registration, so the consuming project <strong>must</strong> enable experimental decorators in its <code>tsconfig.json</code>:</p>
+
+  <pre><code class="language-json">{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}</code></pre>
+
+  <p>If decorators are not enabled, <code>@page</code> and <code>@component</code> will fail to compile.</p>
+</section>
+
+<section>
+  <h2>Local development linking</h2>
+  <p>When developing the core alongside a template, link them rather than republishing:</p>
+  <pre><code class="language-bash"># one-time, in sse-core
+npm link
+
+# in the template project
+npm link @sygnal/sse-core</code></pre>
+  <p>Or point the template's <code>package.json</code> directly at the local checkout:</p>
+  <pre><code class="language-json">{
+  "dependencies": {
+    "@sygnal/sse-core": "file:../sse-core"
+  }
+}</code></pre>
+  <p>The development cycle is then: <code>npm run build</code> (or <code>npm run watch</code>) in sse-core, followed by <code>npm run build</code> in the template to pick up the change, then a hard refresh in the browser.</p>
+</section>
+
+<section>
+  <h2>The engine entry point</h2>
+  <p>SSE ships a loader (<code>init.ts</code>) that decides which engine bundle to load based on the active mode, plus an <code>initSSE()</code> helper that records the script's base URL for later asset loading.</p>
+
+  <h3>initSSE()</h3>
+  <p><code>initSSE()</code> takes <strong>no arguments</strong>. It creates the global <code>window.SSE</code> object if needed and stores the base URL of the currently executing script, derived from <code>document.currentScript</code>. That base URL is later used by helpers such as <code>Page.loadEngineCSS()</code>.</p>
+
+  <pre><code class="language-typescript">import { initSSE } from '@sygnal/sse-core';
+
+initSSE();
+
+// Available globally afterwards:
+console.log(window.SSE.baseUrl);</code></pre>
+
+  <blockquote>
+    <p>Because the base URL is read from <code>document.currentScript</code>, <code>initSSE()</code> must run during the synchronous execution of your loaded script — not from a deferred callback, where <code>document.currentScript</code> is <code>null</code>.</p>
+  </blockquote>
+</section>
+
+<section>
+  <h2>Engine modes: dev vs. prod</h2>
+  <p>The loader supports two execution modes, toggled by a query parameter and persisted in a cookie (<code>siteEngineMode</code>, 7-day expiry) via <code>js-cookie</code>.</p>
+
+  <table>
+    <thead>
+      <tr><th>Mode</th><th>Activate with</th><th>Behavior</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Production (default)</td>
+        <td><code>?engine.mode=prod</code></td>
+        <td>Loads the production engine script (the loader swaps <code>init.js</code> for <code>index.js</code> in the script URL).</td>
+      </tr>
+      <tr>
+        <td>Development</td>
+        <td><code>?engine.mode=dev</code></td>
+        <td>Prepends a <code>🅳🅴🆅 ➜</code> marker to the page title, then loads each script's <code>dev-src</code> in place of its <code>src</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>Set up your tags so the same markup works in both modes:</p>
+  <pre><code class="language-html">&lt;!-- prod loads src; dev loads dev-src --&gt;
+&lt;script src="https://cdn.example.com/prod.js"
+        dev-src="http://localhost:3000/dev.js"&gt;&lt;/script&gt;</code></pre>
+
+  <p>Once a mode is set via the query parameter, the cookie keeps it active across subsequent page loads until you switch back with <code>?engine.mode=prod</code>.</p>
+</section>
+
+<section>
+  <h2>Your first page</h2>
+  <p>The recommended pattern extends <code>PageBase</code>, which supplies Webflow context automatically. See <a href="pages.hd">Pages</a> for the full lifecycle.</p>
+
+  <pre><code class="language-typescript">import { PageBase, page } from '@sygnal/sse-core';
+
+@page('/')
+export class HomePage extends PageBase {
+
+  // Synchronous, runs in &lt;head&gt; before the DOM is ready
+  protected onPrepare(): void {
+    console.log('Page ID:', this.pageInfo.pageId);
+  }
+
+  // Asynchronous, runs after the DOM is ready
+  protected async onLoad(): Promise&lt;void&gt; {
+    console.log('Path:', this.pageInfo.path);
+  }
+}</code></pre>
+
+  <p>To run pages, a template wires them into a <a href="route-dispatcher.hd">RouteDispatcher</a> and scans the DOM for components with <a href="components.hd">initializeComponents()</a>.</p>
+</section>
+
+<section>
+  <h2>Build</h2>
+  <pre><code class="language-bash">npm run build     # compile src/ to dist/ (ES6 modules + .d.ts)
+npm run watch     # rebuild on change</code></pre>
+  <p>The core compiles to individual ES6 modules with no bundling step. Bundling, minification, and SCSS compilation are the template's responsibility.</p>
+</section>

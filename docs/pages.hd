@@ -1,0 +1,136 @@
+---
+title: Pages
+version: 1
+date: 2026-06-20
+description: PageBase, the @page decorator, WebflowPageInfo context, and the current-page singleton.
+tags: [sse, pages, pagebase, webflow]
+---
+
+<h1>Pages</h1>
+
+<p>A page is the per-route module that runs when its URL is matched. SSE's <code>PageBase</code> implements the <a href="architecture.hd">IModule lifecycle</a> for you and automatically detects Webflow page context, so your page code starts with everything it needs already in hand.</p>
+
+<section>
+  <h2>Defining a page</h2>
+  <p>Extend <code>PageBase</code> and register the class with <code>@page(route)</code>. Override <code>onLoad()</code> (required) and optionally <code>onPrepare()</code>.</p>
+
+  <pre><code class="language-typescript">import { PageBase, page } from '@sygnal/sse-core';
+
+@page('/')
+export class HomePage extends PageBase {
+
+  protected onPrepare(): void {
+    // Synchronous, in &lt;head&gt;. pageInfo already populated.
+    console.log('Page ID:', this.pageInfo.pageId);
+    console.log('Collection:', this.pageInfo.collectionId);
+  }
+
+  protected async onLoad(): Promise&lt;void&gt; {
+    // Asynchronous, after DOM ready.
+    console.log('Path:', this.pageInfo.path);
+    console.log('Query params:', this.pageInfo.queryParams);
+  }
+}</code></pre>
+
+  <p><code>onLoad()</code> is <code>abstract</code> on <code>PageBase</code>, so every page must implement it. <code>onPrepare()</code> has a no-op default; override it only when you need head-time work. You do not write a constructor — if you do, call <code>super()</code> so context detection runs.</p>
+</section>
+
+<section>
+  <h2>The @page decorator</h2>
+  <p><code>@page(route)</code> registers the class in the page registry under the given path. Routes may be exact (<code>/about</code>) or wildcards ending in <code>*</code> (<code>/blog/*</code> matches any path starting with <code>/blog/</code>). A class can carry multiple <code>@page</code> decorators to answer several routes:</p>
+
+  <pre><code class="language-typescript">@page('/about')
+@page('/about-us')
+@page('/team')
+export class AboutPage extends PageBase {
+  protected async onLoad(): Promise&lt;void&gt; {
+    console.log('About loaded');
+  }
+}</code></pre>
+
+  <p>Registration happens at import time and logs <code>[SSE Registry] Page registered: "&lt;route&gt;"</code>. Wildcard matching is handled by <code>RouteDispatcher</code> — see <a href="route-dispatcher.hd">Route Dispatcher</a>.</p>
+</section>
+
+<section>
+  <h2>Webflow page context: pageInfo</h2>
+  <p>On construction, <code>PageBase</code> reads attributes from the root <code>&lt;html&gt;</code> element and the current URL into a <code>WebflowPageInfo</code> object exposed as <code>this.pageInfo</code> (protected) and via the public <code>getPageInfo()</code> accessor.</p>
+
+  <table>
+    <thead>
+      <tr><th>Property</th><th>Type</th><th>Source</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>path</code></td><td><code>string</code></td><td><code>window.location.pathname</code></td></tr>
+      <tr><td><code>url</code></td><td><code>string</code></td><td><code>window.location.href</code></td></tr>
+      <tr><td><code>hash</code></td><td><code>string</code></td><td><code>window.location.hash</code></td></tr>
+      <tr><td><code>queryParams</code></td><td><code>URLSearchParams</code></td><td>parsed from the URL</td></tr>
+      <tr><td><code>domain</code></td><td><code>string | null</code></td><td><code>data-wf-domain</code></td></tr>
+      <tr><td><code>pageId</code></td><td><code>string | null</code></td><td><code>data-wf-page</code></td></tr>
+      <tr><td><code>siteId</code></td><td><code>string | null</code></td><td><code>data-wf-site</code></td></tr>
+      <tr><td><code>lang</code></td><td><code>string | null</code></td><td><code>lang</code></td></tr>
+      <tr><td><code>collectionId</code></td><td><code>string | null</code></td><td><code>data-wf-collection</code></td></tr>
+      <tr><td><code>itemId</code></td><td><code>string | null</code></td><td><code>data-wf-item</code></td></tr>
+      <tr><td><code>itemSlug</code></td><td><code>string | null</code></td><td><code>data-wf-item-slug</code></td></tr>
+    </tbody>
+  </table>
+
+  <p>The CMS-related fields (<code>collectionId</code>, <code>itemId</code>, <code>itemSlug</code>) are populated only on Webflow Collection pages; on static pages they are <code>null</code>. Always null-check before relying on them.</p>
+
+  <pre><code class="language-typescript">@page('/blog/*')
+export class BlogPostPage extends PageBase {
+  protected async onLoad(): Promise&lt;void&gt; {
+    if (this.pageInfo.itemSlug) {
+      console.log('Viewing CMS item:', this.pageInfo.itemSlug);
+    }
+  }
+}</code></pre>
+</section>
+
+<section>
+  <h2>The current-page singleton</h2>
+  <p><code>PageBase</code> keeps a static reference to the active page instance, set during its <code>setup()</code> phase. Any code — typically a component — can retrieve it:</p>
+
+  <pre><code class="language-typescript">static getCurrentPage&lt;T extends PageBase = PageBase&gt;(): T | null</code></pre>
+
+  <p>This lets components read page context without knowing or importing the concrete page type:</p>
+
+  <pre><code class="language-typescript">import { ComponentBase, PageBase, component } from '@sygnal/sse-core';
+
+@component('breadcrumb')
+export class Breadcrumb extends ComponentBase {
+  protected async onLoad(): Promise&lt;void&gt; {
+    const page = PageBase.getCurrentPage();
+    if (page) {
+      const info = page.getPageInfo();
+      console.log('On collection:', info.collectionId);
+      console.log('Item slug:', info.itemSlug);
+    }
+  }
+}</code></pre>
+
+  <p>The generic parameter lets you recover a specific page type when you do need its custom members:</p>
+
+  <pre><code class="language-typescript">const listing = PageBase.getCurrentPage&lt;ListingPage&gt;();
+listing?.refreshFilters();</code></pre>
+
+  <blockquote>
+    <p>Because the singleton is set during the page's <code>setup()</code> phase, it is reliably available by the time components run their <code>onLoad()</code>. Read it from <code>onLoad()</code> rather than from a component constructor.</p>
+  </blockquote>
+</section>
+
+<section>
+  <h2>Lifecycle reference</h2>
+  <table>
+    <thead>
+      <tr><th>Member</th><th>Visibility</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>pageInfo</code></td><td>protected</td><td>Detected Webflow context</td></tr>
+      <tr><td><code>getPageInfo()</code></td><td>public</td><td>Read context from outside the instance</td></tr>
+      <tr><td><code>onPrepare()</code></td><td>protected, optional</td><td>Synchronous head-time setup</td></tr>
+      <tr><td><code>onLoad()</code></td><td>protected, abstract</td><td>Asynchronous DOM-ready logic (required)</td></tr>
+      <tr><td><code>setup()</code> / <code>exec()</code></td><td>framework</td><td>Called by the dispatcher; you override the <code>on*</code> methods instead</td></tr>
+      <tr><td><code>PageBase.getCurrentPage()</code></td><td>static</td><td>Retrieve the active page instance</td></tr>
+    </tbody>
+  </table>
+</section>

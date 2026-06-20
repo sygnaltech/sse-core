@@ -1,0 +1,177 @@
+---
+title: Components
+version: 1
+date: 2026-06-20
+description: ComponentBase, the @component decorator, initializeComponents() DOM discovery, and ComponentManager.
+tags: [sse, components, componentbase]
+---
+
+<h1>Components</h1>
+
+<p>A component is a reusable behavior bound to an element in the DOM. Where a page is matched once per route, a component is instantiated once per matching element — so the same component class can run many times on a page. <code>ComponentBase</code> implements the <a href="architecture.hd">IModule lifecycle</a> and hands your code the element and its context automatically.</p>
+
+<section>
+  <h2>Defining a component</h2>
+  <p>Extend <code>ComponentBase</code> and register it with <code>@component(name)</code>. Override <code>onLoad()</code> (required) and optionally <code>onPrepare()</code>.</p>
+
+  <pre><code class="language-typescript">import { ComponentBase, component } from '@sygnal/sse-core';
+
+@component('navigation')
+export class Navigation extends ComponentBase {
+
+  protected onPrepare(): void {
+    // Synchronous. element and context already populated.
+    console.log('Component:', this.context.name);
+  }
+
+  protected async onLoad(): Promise&lt;void&gt; {
+    this.element.addEventListener('click', () =&gt; {
+      console.log('Data attrs:', this.context.dataAttributes);
+    });
+  }
+}</code></pre>
+
+  <p>The constructor receives the element and runs context detection; if you write your own constructor, accept <code>(element: HTMLElement)</code> and call <code>super(element)</code>. <code>onLoad()</code> is abstract and must be implemented; <code>onPrepare()</code> defaults to a no-op.</p>
+</section>
+
+<section id="lifecycle">
+  <h2>The two-phase lifecycle</h2>
+  <p>Components follow the same two-phase model as pages (see <a href="architecture.hd">Architecture</a>). When <code>initializeComponents()</code> runs, it executes <strong>two ordered passes</strong> over all discovered components:</p>
+
+  <table>
+    <thead>
+      <tr><th>Phase</th><th>Framework call</th><th>Your hook</th><th>Per pass</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Prepare</td><td><code>setup()</code></td><td><code>onPrepare()</code> (sync, optional)</td><td>Construct, register with the manager, then prepare — for <em>every</em> component</td></tr>
+      <tr><td>Load</td><td><code>exec()</code></td><td><code>onLoad()</code> (async, required)</td><td>Execute — for every component already prepared</td></tr>
+    </tbody>
+  </table>
+
+  <p>Because the whole prepare pass completes before the load pass begins, a component's <code>onLoad()</code> can safely assume that every other component has been constructed, registered, and prepared. This is the same guarantee pages get from the dispatcher calling <code>setupRoute()</code> before <code>execRoute()</code>.</p>
+
+  <blockquote>
+    <p>Unlike pages — whose prepare and load phases are split across the <code>&lt;head&gt;</code> and DOM-ready by the dispatcher's two separate calls — a component's two phases run back-to-back within a single <code>initializeComponents()</code> call (necessarily after DOM-ready, since discovery queries the DOM). Use <code>onPrepare()</code> for synchronous, order-independent setup and cross-component registration; use <code>onLoad()</code> for everything else.</p>
+  </blockquote>
+</section>
+
+<section>
+  <h2>Component context</h2>
+  <p>On construction, <code>ComponentBase</code> populates <code>this.element</code> (the bound <code>HTMLElement</code>) and <code>this.context</code>, a <code>ComponentContext</code>:</p>
+
+  <table>
+    <thead>
+      <tr><th>Property</th><th>Type</th><th>Source</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>element</code></td><td><code>HTMLElement</code></td><td>the component's root element</td></tr>
+      <tr><td><code>name</code></td><td><code>string | null</code></td><td><code>sse-component</code> attribute</td></tr>
+      <tr><td><code>id</code></td><td><code>string | null</code></td><td><code>sse-component-id</code> attribute</td></tr>
+      <tr><td><code>dataAttributes</code></td><td><code>DOMStringMap</code></td><td><code>element.dataset</code> — all <code>data-*</code> attributes</td></tr>
+    </tbody>
+  </table>
+
+  <p>SSE uses the <code>sse-</code> attribute prefix throughout: <code>sse-component</code> names the component (and is what <code>initializeComponents()</code> discovers by default), and <code>sse-component-id</code> gives an optional instance identifier. <code>dataAttributes</code> is a separate convenience exposing the element's standard <code>data-*</code> attributes via <code>element.dataset</code>; note that the <code>sse-*</code> attributes are <em>not</em> part of <code>dataset</code>, since they are not <code>data-*</code> attributes.</p>
+</section>
+
+<section>
+  <h2>Discovering components: initializeComponents()</h2>
+  <p><code>initializeComponents()</code> scans the DOM for component elements, looks each up in the registry by name, and runs them through the <a href="#lifecycle">two-phase lifecycle</a>: it constructs, registers, and prepares (<code>setup()</code> → <code>onPrepare()</code>) every component first, then executes (<code>exec()</code> → <code>onLoad()</code>) every component.</p>
+
+  <pre><code class="language-typescript">import { initializeComponents } from '@sygnal/sse-core';
+
+// Defaults: selector '[sse-component]', attribute 'sse-component'
+initializeComponents();</code></pre>
+
+  <h3>Options</h3>
+  <table>
+    <thead>
+      <tr><th>Option</th><th>Type</th><th>Default</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>selector</code></td><td><code>string</code></td><td><code>'[sse-component]'</code></td><td>CSS selector for component elements</td></tr>
+      <tr><td><code>attributeName</code></td><td><code>string</code></td><td><code>'sse-component'</code></td><td>Attribute holding the component name</td></tr>
+      <tr><td><code>componentManager</code></td><td><code>ComponentManager</code></td><td><code>window.componentManager</code></td><td>Where to register instances</td></tr>
+      <tr><td><code>logSummary</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Log a count of initialized instances</td></tr>
+      <tr><td><code>onComponentInit</code></td><td>callback</td><td>—</td><td><code>(name, instance, element)</code> on success</td></tr>
+      <tr><td><code>onError</code></td><td>callback</td><td>—</td><td><code>(error, name, element)</code> on a thrown error</td></tr>
+      <tr><td><code>onUnknownComponent</code></td><td>callback</td><td>—</td><td><code>(name, element)</code> when no class is registered for the name</td></tr>
+    </tbody>
+  </table>
+
+  <pre><code class="language-typescript">initializeComponents({
+  // override the defaults only if your markup uses a different convention
+  selector: '[data-widget]',
+  attributeName: 'data-widget',
+  onComponentInit: (name, instance, element) =&gt; {
+    console.log(`Initialized ${name}`, element);
+  },
+  onUnknownComponent: (name, element) =&gt; {
+    console.warn(`No class registered for "${name}"`, element);
+  },
+});</code></pre>
+
+  <h3>Behavior</h3>
+  <ul>
+    <li>Elements matching <code>selector</code> but missing an <code>attributeName</code> value are skipped with a warning.</li>
+    <li>If the name is not in the registry, <code>onUnknownComponent</code> is called (or a console warning is emitted) — a reminder to add the <code>@component</code> decorator and import the module.</li>
+    <li>Errors thrown during the prepare phase (construction, registration, or <code>onPrepare()</code>) route to <code>onError</code> (or are logged); that component is dropped and does not advance to the load phase, but the rest of the scan continues.</li>
+    <li>Errors thrown during the load phase (<code>onLoad()</code>) route to <code>onError</code> (or are logged) and do not halt the remaining components.</li>
+    <li><code>onComponentInit</code> fires after a component's <code>onLoad()</code> in the load phase.</li>
+    <li>When a <code>componentManager</code> is available and <code>logSummary</code> is on, a one-line summary of initialized types is logged.</li>
+  </ul>
+
+  <p>HTML usage with the defaults:</p>
+  <pre><code class="language-html">&lt;nav sse-component="navigation"&gt;...&lt;/nav&gt;
+&lt;div sse-component="slider" sse-component-id="hero"&gt;...&lt;/div&gt;</code></pre>
+</section>
+
+<section>
+  <h2>Tracking instances: ComponentManager</h2>
+  <p><code>ComponentManager</code> is a registry of live component <em>instances</em>, grouped by type. <code>initializeComponents()</code> registers into it automatically when one is provided; you can also use it directly.</p>
+
+  <pre><code class="language-typescript">import { ComponentManager } from '@sygnal/sse-core';
+
+const manager = new ComponentManager();
+
+manager.registerComponent('navigation', navInstance);
+manager.registerComponent('navigation', mobileNavInstance);
+
+const navs = manager.getComponentsByType&lt;Navigation&gt;('navigation'); // both instances
+const types = manager.getComponentTypes();   // ['navigation', ...]
+const count = manager.getTotalCount();        // total across all types
+manager.clear();                              // drop all</code></pre>
+
+  <table>
+    <thead>
+      <tr><th>Method</th><th>Returns</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>registerComponent(type, instance)</code></td><td><code>void</code></td><td>Add an instance under a type key</td></tr>
+      <tr><td><code>getComponentsByType&lt;T&gt;(type)</code></td><td><code>T[]</code></td><td>All instances of a type (empty array if none)</td></tr>
+      <tr><td><code>getComponentTypes()</code></td><td><code>string[]</code></td><td>All registered type names</td></tr>
+      <tr><td><code>getTotalCount()</code></td><td><code>number</code></td><td>Total instance count across types</td></tr>
+      <tr><td><code>clear()</code></td><td><code>void</code></td><td>Remove all instances</td></tr>
+    </tbody>
+  </table>
+
+  <p>To use the default wiring, assign a manager to <code>window.componentManager</code> before calling <code>initializeComponents()</code>; the function registers there by default.</p>
+</section>
+
+<section>
+  <h2>Reaching the page from a component</h2>
+  <p>Components stay page-agnostic by reading the active page through the singleton rather than importing a concrete page class:</p>
+
+  <pre><code class="language-typescript">import { ComponentBase, PageBase, component } from '@sygnal/sse-core';
+
+@component('share-button')
+export class ShareButton extends ComponentBase {
+  protected async onLoad(): Promise&lt;void&gt; {
+    const page = PageBase.getCurrentPage();
+    const info = page?.getPageInfo();
+    console.log('Sharing item:', info?.itemSlug);
+  }
+}</code></pre>
+
+  <p>See <a href="pages.hd">Pages</a> for the full <code>WebflowPageInfo</code> shape and the typed <code>getCurrentPage&lt;T&gt;()</code> overload.</p>
+</section>

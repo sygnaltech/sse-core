@@ -1,0 +1,153 @@
+---
+title: FIX — Functional Interactions
+version: 1
+date: 2026-06-20
+description: The declarative trigger/action/event interaction system re-exported from @sygnal/fix.
+tags: [sse, fix, interactions, triggers, actions, events]
+---
+
+<h1>FIX — Functional Interactions</h1>
+
+<p>FIX is a declarative, event-driven interaction system: HTML attributes wire <strong>triggers</strong> (things that happen, like a click) to <strong>events</strong> (named channels) which fan out to <strong>actions</strong> (things to do). SSE Core re-exports the entire FIX surface from the <code>@sygnal/fix</code> package, so you import it from <code>@sygnal/sse-core</code> without adding a dependency.</p>
+
+<p>FIX was added in SSE Core 2.1.0 and is fully backward compatible — projects that don't call <code>initializeFIX()</code> are unaffected.</p>
+
+<section>
+  <h2>The model</h2>
+  <table>
+    <thead><tr><th>Concept</th><th>Base class</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td>Trigger</td><td><code>TriggerBase</code></td><td>Listens on an element and fires a named event, optionally with data</td></tr>
+      <tr><td>Event</td><td><code>EventBase</code></td><td>A named channel; receives the fire and invokes its registered actions</td></tr>
+      <tr><td>Action</td><td><code>ActionBase</code></td><td>The behavior run in response — sync or async</td></tr>
+    </tbody>
+  </table>
+
+  <p>The flow is: a trigger on an element invokes its event → the event invokes every action registered to it. Triggers and actions bound through HTML attributes are discovered by <code>initializeFIX()</code>; actions with no element can be registered from code.</p>
+</section>
+
+<section>
+  <h2>HTML attribute syntax</h2>
+  <p>Bind triggers and actions to a named event with colon-delimited attributes:</p>
+
+  <pre><code class="language-html">&lt;!-- fire the "hero-enter" event on click --&gt;
+&lt;button trigger:click="hero-enter"&gt;Go&lt;/button&gt;
+
+&lt;!-- attach trigger data: composeTriggerData() reads trigger:&lt;type&gt;:data:&lt;key&gt; --&gt;
+&lt;button trigger:click="hero-enter" trigger:click:data:section="hero"&gt;Go&lt;/button&gt;
+
+&lt;!-- run the "api-call" action when "hero-enter" fires --&gt;
+&lt;div action:api-call="hero-enter"&gt;&lt;/div&gt;</code></pre>
+
+  <p>The attribute name is <code>&lt;kind&gt;:&lt;type&gt;</code> (e.g. <code>trigger:click</code>, <code>action:api-call</code>) and its value is the event name. Trigger data attributes follow the pattern <code>trigger:&lt;type&gt;:data:&lt;key&gt;="value"</code> and are gathered into a <code>TriggerData</code> object passed to each action.</p>
+</section>
+
+<section>
+  <h2>Registering types</h2>
+  <p>Trigger and action <em>types</em> must be registered before <code>initializeFIX()</code> scans the DOM, so the scanner knows how to construct them. There are three registration paths:</p>
+
+  <table>
+    <thead><tr><th>Function</th><th>Use when</th></tr></thead>
+    <tbody>
+      <tr><td><code>registerTriggerType(name, TriggerCtor)</code></td><td>Exposing a trigger class for <code>trigger:name="event"</code> attributes</td></tr>
+      <tr><td><code>registerActionType(name, ActionCtor)</code></td><td>Exposing an action class for <code>action:name="event"</code> attributes</td></tr>
+      <tr><td><code>registerProgrammaticAction(name, event, ActionCtor)</code></td><td>Registering an action instance immediately, with no DOM element (e.g. an API call)</td></tr>
+    </tbody>
+  </table>
+
+  <p>The <code>@trigger(name)</code> and <code>@action(name)</code> decorators register classes into <code>FIXRegistry</code> at import time, mirroring SSE's own decorator pattern. The standard <code>trigger:click</code> and <code>action:click</code> handlers ship with FIX and are auto-imported when the package loads.</p>
+</section>
+
+<section>
+  <h2>Events: parallel vs. sequential</h2>
+  <p>Two standard event implementations differ in how they invoke their actions:</p>
+  <table>
+    <thead><tr><th>Class</th><th>Invocation</th><th>Use for</th></tr></thead>
+    <tbody>
+      <tr><td><code>EventDefault</code></td><td>All actions in parallel, fire-and-forget</td><td>Independent side effects</td></tr>
+      <tr><td><code>EventSequential</code></td><td>One action at a time, awaiting each</td><td>Playlists, animations, ordered sequences</td></tr>
+    </tbody>
+  </table>
+
+  <p>Register event instances by name with <code>EventRegistry.registerEvent()</code>:</p>
+  <pre><code class="language-typescript">import { EventRegistry, EventSequential } from '@sygnal/sse-core';
+
+EventRegistry.registerEvent('hero-enter', new EventSequential('hero-enter'));</code></pre>
+</section>
+
+<section>
+  <h2>Putting it together</h2>
+  <pre><code class="language-typescript">import {
+  registerTriggerType,
+  registerActionType,
+  registerProgrammaticAction,
+  EventRegistry,
+  EventSequential,
+  initializeFIX,
+} from '@sygnal/sse-core';
+
+// 1. Make custom types available to attributes
+registerTriggerType('submit', TriggerSubmit);
+registerActionType('api-call', ActionApiCall);
+
+// 2. Define the events referenced by your attributes
+EventRegistry.registerEvent('hero-enter', new EventSequential('hero-enter'));
+
+// 3. (optional) Register an element-less action
+registerProgrammaticAction('log', 'hero-enter', ActionLog);
+
+// 4. Scan the DOM and wire everything up
+initializeFIX();</code></pre>
+
+  <blockquote>
+    <p>Call <code>initializeFIX()</code> <strong>after</strong> <code>initializeComponents()</code> in your bootstrap, and after registering your custom types and events, so the DOM scan finds fully-registered handlers.</p>
+  </blockquote>
+</section>
+
+<section>
+  <h2>Writing custom handlers</h2>
+  <p>Extend the base classes and implement their abstract methods.</p>
+
+  <pre><code class="language-typescript">import { ActionBase, action, type TriggerData } from '@sygnal/sse-core';
+
+@action('log')
+export class ActionLog extends ActionBase {
+  init(): void {
+    // one-time setup
+  }
+
+  async trigger(triggerElement: HTMLElement, data: TriggerData): Promise&lt;void&gt; {
+    console.log('Fired from', triggerElement, 'with', data);
+  }
+}</code></pre>
+
+  <table>
+    <thead><tr><th>Base</th><th>Constructor</th><th>Implement</th></tr></thead>
+    <tbody>
+      <tr><td><code>TriggerBase</code></td><td><code>(element, eventName, attributeName)</code></td><td><code>init()</code> — attach listeners; call <code>invoke()</code> to fire</td></tr>
+      <tr><td><code>ActionBase</code></td><td><code>(element | null, attributeName)</code></td><td><code>init()</code> and <code>trigger(el, data)</code></td></tr>
+      <tr><td><code>EventBase</code></td><td><code>(eventName)</code></td><td><code>invoke(el, data)</code>; inherits <code>registerAction()</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Debugging FIX</h2>
+  <p><code>FIXDebug</code> exposes console inspection helpers:</p>
+  <table>
+    <thead><tr><th>Call</th><th>Returns</th></tr></thead>
+    <tbody>
+      <tr><td><code>FIXDebug.triggerTypes()</code></td><td>Registered trigger type names</td></tr>
+      <tr><td><code>FIXDebug.actionTypes()</code></td><td>Registered action type names</td></tr>
+      <tr><td><code>FIXDebug.triggers()</code></td><td>Active trigger instances on the page (instance, element, attribute, event)</td></tr>
+      <tr><td><code>FIXDebug.actions()</code></td><td>Active action instances on the page</td></tr>
+      <tr><td><code>FIXDebug.events()</code></td><td>Registered event names</td></tr>
+      <tr><td><code>FIXDebug.stats()</code></td><td>Counts and names across all of the above</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Exports</h2>
+  <p>Re-exported from <code>@sygnal/sse-core</code>: <code>TriggerBase</code>, <code>TriggerData</code> (type), <code>ActionBase</code>, <code>EventBase</code>, <code>FIXRegistry</code>, <code>EventRegistry</code>, <code>EventDefault</code>, <code>EventSequential</code>, <code>trigger</code>, <code>action</code>, <code>initializeFIX</code>, <code>registerProgrammaticAction</code>, <code>registerActionType</code>, <code>registerTriggerType</code>, and <code>FIXDebug</code>.</p>
+</section>

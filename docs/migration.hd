@@ -1,0 +1,158 @@
+---
+title: Migration — v1 to v2
+version: 1
+date: 2026-06-20
+description: Moving from @sygnal/sse and the IModule pattern to @sygnal/sse-core base classes.
+tags: [sse, migration, upgrade]
+---
+
+<h1>Migration: v1 → v2</h1>
+
+<p>SSE v2 renames the package and introduces base classes (<code>PageBase</code>, <code>ComponentBase</code>) that detect Webflow context automatically and replace the <code>setup()</code>/<code>exec()</code> methods with <code>onPrepare()</code>/<code>onLoad()</code>. The legacy <code>IModule</code> pattern still works, so migration can be incremental.</p>
+
+<section>
+  <h2>1. Package rename</h2>
+  <p>Replace every import path:</p>
+  <table>
+    <thead><tr><th>Old</th><th>New</th></tr></thead>
+    <tbody>
+      <tr><td><code>@sygnal/sse</code></td><td><code>@sygnal/sse-core</code></td></tr>
+    </tbody>
+  </table>
+  <pre><code class="language-bash">npm uninstall @sygnal/sse
+npm install @sygnal/sse-core</code></pre>
+</section>
+
+<section>
+  <h2>2. Migrating a page</h2>
+  <p>Switch the import, extend <code>PageBase</code> instead of implementing <code>IModule</code>, drop the constructor (or replace it with <code>super()</code>), and rename the lifecycle methods.</p>
+
+  <h3>Before (v1)</h3>
+  <pre><code class="language-typescript">import { IModule, page } from '@sygnal/sse';
+
+@page('/')
+export class HomePage implements IModule {
+  constructor() {}
+
+  setup(): void {
+    // sync setup
+  }
+
+  async exec(): Promise&lt;void&gt; {
+    const pageId = document.documentElement.getAttribute('data-wf-page');
+  }
+}</code></pre>
+
+  <h3>After (v2)</h3>
+  <pre><code class="language-typescript">import { PageBase, page } from '@sygnal/sse-core';
+
+@page('/')
+export class HomePage extends PageBase {
+
+  protected onPrepare(): void {
+    // sync setup — context already detected
+    console.log('Page ID:', this.pageInfo.pageId);
+  }
+
+  protected async onLoad(): Promise&lt;void&gt; {
+    console.log('Collection:', this.pageInfo.collectionId);
+    console.log('Item slug:', this.pageInfo.itemSlug);
+  }
+}</code></pre>
+
+  <p>Note how manual <code>data-wf-*</code> reads are replaced by <code>this.pageInfo</code>. See <a href="pages.hd">Pages</a> for the full field list.</p>
+</section>
+
+<section>
+  <h2>3. Migrating a component</h2>
+  <p>Extend <code>ComponentBase</code>; the element is captured for you as <code>this.element</code>, so you can drop the field and the manual assignment.</p>
+
+  <h3>Before (v1)</h3>
+  <pre><code class="language-typescript">import { IModule, component } from '@sygnal/sse';
+
+@component('my-component')
+export class MyComponent implements IModule {
+  private elem: HTMLElement;
+
+  constructor(elem: HTMLElement) {
+    this.elem = elem;
+  }
+
+  setup(): void {}
+
+  async exec(): Promise&lt;void&gt; {
+    this.elem.addEventListener('click', () =&gt; {});
+  }
+}</code></pre>
+
+  <h3>After (v2)</h3>
+  <pre><code class="language-typescript">import { ComponentBase, PageBase, component } from '@sygnal/sse-core';
+
+@component('my-component')
+export class MyComponent extends ComponentBase {
+
+  protected onPrepare(): void {
+    console.log('Component:', this.context.name);
+  }
+
+  protected async onLoad(): Promise&lt;void&gt; {
+    const page = PageBase.getCurrentPage();
+    if (page) {
+      console.log('On page:', page.getPageInfo().pageId);
+    }
+    this.element.addEventListener('click', () =&gt; {});
+  }
+}</code></pre>
+</section>
+
+<section>
+  <h2>4. Method renaming cheat sheet</h2>
+  <table>
+    <thead><tr><th>v1</th><th>v2</th><th>Visibility / signature</th></tr></thead>
+    <tbody>
+      <tr><td><code>implements IModule</code></td><td><code>extends PageBase</code> / <code>extends ComponentBase</code></td><td>—</td></tr>
+      <tr><td><code>setup(): void</code></td><td><code>protected onPrepare(): void</code></td><td>optional override</td></tr>
+      <tr><td><code>async exec(): Promise&lt;void&gt;</code></td><td><code>protected async onLoad(): Promise&lt;void&gt;</code></td><td>required override</td></tr>
+      <tr><td><code>constructor()</code> (page)</td><td>remove, or call <code>super()</code></td><td>—</td></tr>
+      <tr><td><code>constructor(el)</code> (component)</td><td>remove, or call <code>super(el)</code></td><td>—</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>5. Fix the RouteDispatcher instance bug</h2>
+  <p>A common v1 pattern created a fresh dispatcher per call, which silently lost prepare-phase state. Create one dispatcher and reuse it for both phases:</p>
+
+  <pre><code class="language-typescript">// BROKEN — two instances
+routeDispatcher().setupRoute();   // instance A
+routeDispatcher().execRoute();    // instance B — state lost</code></pre>
+
+  <pre><code class="language-typescript">// CORRECT — one instance
+const dispatcher = new RouteDispatcher(Site);
+dispatcher.routes = getAllPages();
+dispatcher.setupRoute();
+dispatcher.execRoute();</code></pre>
+
+  <p>See <a href="route-dispatcher.hd">Route Dispatcher</a> for details.</p>
+</section>
+
+<section>
+  <h2>6. Keep using IModule where you want to</h2>
+  <p>The base classes are recommended, not mandatory. Existing <code>implements IModule</code> classes continue to register and run unchanged — useful when you need full control over the constructor or don't want automatic context detection. You can migrate page by page and component by component.</p>
+</section>
+
+<section>
+  <h2>7. tsconfig requirements</h2>
+  <p>Confirm the consuming project still enables decorator support after the upgrade:</p>
+  <pre><code class="language-json">{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}</code></pre>
+</section>
+
+<section>
+  <h2>8. Optional: adopt FIX (2.1+)</h2>
+  <p>FIX is additive and backward compatible. To use it, register your trigger/action types and events, then call <code>initializeFIX()</code> after <code>initializeComponents()</code>. See <a href="fix.hd">FIX</a>.</p>
+</section>

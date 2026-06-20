@@ -1,0 +1,76 @@
+---
+title: SSE Core — Overview
+version: 1
+date: 2026-06-20
+description: Reference documentation for @sygnal/sse-core, the core framework library for building dynamic Webflow sites.
+tags: [sse, webflow, overview]
+---
+
+<h1>SSE Core</h1>
+
+<p><strong>@sygnal/sse-core</strong> is the core framework library for the Sygnal Site Engine (SSE) — a lightweight, decorator-based runtime for building dynamic, enhanced Webflow sites. It provides client-side utilities for component lifecycle management, route-based page execution, dynamic script and CSS loading, Webflow context detection, and declarative interactions.</p>
+
+<p>This is a <strong>library package</strong> consumed by website template projects (such as <a href="https://github.com/sygnaltech/sse-template">sse-template</a>). It is not a standalone application. Templates install it, define page and component classes against its base classes and decorators, then bundle everything into a single JavaScript file loaded into Webflow via CDN.</p>
+
+<section>
+  <h2>Why SSE</h2>
+  <p>Webflow gives designers full control over markup and styling, but its custom-code surface is a single JavaScript file per site or page. SSE turns that one entry point into a structured framework:</p>
+  <ul>
+    <li><strong>Decorator-based auto-registration</strong> — annotate page and component classes with <code>@page</code> and <code>@component</code>; they register themselves at import time.</li>
+    <li><strong>Two-phase lifecycle</strong> — synchronous <code>onPrepare()</code> in the <code>&lt;head&gt;</code> and asynchronous <code>onLoad()</code> after the DOM is ready.</li>
+    <li><strong>Automatic Webflow context</strong> — base classes read page IDs, site IDs, CMS collection/item data, language, and URL details for you.</li>
+    <li><strong>Route dispatching</strong> — map URL paths (with wildcards) to page classes and run only the matching one.</li>
+    <li><strong>FIX</strong> — a declarative trigger/action interaction system, re-exported from <code>@sygnal/fix</code>.</li>
+  </ul>
+  <p>Unlike React, Vue, or Angular, SSE has no virtual DOM, no reactive state, and no build-time template compilation. It is a pure runtime designed for Webflow's single-bundle constraint, and adds minimal overhead (~9&nbsp;KB minified in a typical template build).</p>
+</section>
+
+<section>
+  <h2>Documentation map</h2>
+  <dl>
+    <dt><a href="getting-started.hd">Getting Started</a></dt>
+    <dd>Installation, the engine entry point, dev/prod modes, and a first page.</dd>
+
+    <dt><a href="architecture.hd">Architecture</a></dt>
+    <dd>Core concepts: the registry, the lifecycle, pages vs. components, and import-order rules.</dd>
+
+    <dt><a href="pages.hd">Pages</a></dt>
+    <dd><code>PageBase</code>, the <code>@page</code> decorator, <code>WebflowPageInfo</code>, and the current-page singleton.</dd>
+
+    <dt><a href="components.hd">Components</a></dt>
+    <dd><code>ComponentBase</code>, the <code>@component</code> decorator, <code>initializeComponents()</code>, and <code>ComponentManager</code>.</dd>
+
+    <dt><a href="route-dispatcher.hd">Route Dispatcher</a></dt>
+    <dd>Wiring registered pages to URLs with <code>RouteDispatcher</code>, and the instance-reuse rule.</dd>
+
+    <dt><a href="utilities.hd">Utilities</a></dt>
+    <dd><code>Page</code>, <code>Debug</code>, <code>Request</code>, and <code>ScriptElement</code>.</dd>
+
+    <dt><a href="fix.hd">FIX — Functional Interactions</a></dt>
+    <dd>The declarative trigger/action system and its HTML attribute syntax.</dd>
+
+    <dt><a href="api-reference.hd">API Reference</a></dt>
+    <dd>Every public export, grouped by module, with signatures.</dd>
+
+    <dt><a href="migration.hd">Migration: v1 → v2</a></dt>
+    <dd>Moving from <code>@sygnal/sse</code> and the <code>IModule</code> pattern to the base classes.</dd>
+  </dl>
+</section>
+
+<section>
+  <h2>At a glance</h2>
+  <table>
+    <thead>
+      <tr><th>Item</th><th>Value</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Package</td><td><code>@sygnal/sse-core</code></td></tr>
+      <tr><td>Version</td><td>2.2.0</td></tr>
+      <tr><td>License</td><td>MIT</td></tr>
+      <tr><td>Output</td><td>ES6 modules (no bundling) + <code>.d.ts</code> declarations</td></tr>
+      <tr><td>Runtime deps</td><td><code>@sygnal/fix</code>, <code>js-cookie</code></td></tr>
+      <tr><td>Build</td><td>TypeScript (<code>tsc</code>), <code>experimentalDecorators</code> required</td></tr>
+      <tr><td>Author</td><td>Michael Wells (mike@sygnal.com)</td></tr>
+    </tbody>
+  </table>
+</section>

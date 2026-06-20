@@ -1,0 +1,148 @@
+---
+title: Architecture
+version: 1
+date: 2026-06-20
+description: Core concepts of SSE — the registry, the two-phase lifecycle, pages vs. components, and import-order rules.
+tags: [sse, architecture, concepts]
+---
+
+<h1>Architecture</h1>
+
+<p>SSE is built from a few small, composable pieces: an <strong>IModule</strong> contract, a decorator-driven <strong>registry</strong>, a two-phase <strong>lifecycle</strong>, and a <strong>route dispatcher</strong> that ties them to URLs. This page explains how they fit together and the rules that follow from the design.</p>
+
+<section>
+  <h2>The IModule contract</h2>
+  <p>Every page and component is an <em>IModule</em> — an object with two methods:</p>
+  <pre><code class="language-typescript">export interface IModule {
+  setup(): void;   // synchronous initialization
+  exec(): void;    // execution after DOM ready
+}</code></pre>
+  <p>You rarely implement <code>IModule</code> directly. The base classes <a href="pages.hd">PageBase</a> and <a href="components.hd">ComponentBase</a> implement it for you, run automatic context detection, and expose the friendlier <code>onPrepare()</code> / <code>onLoad()</code> overrides. Implementing <code>IModule</code> by hand remains supported for advanced cases.</p>
+</section>
+
+<section>
+  <h2>The two-phase lifecycle</h2>
+  <p>Every module runs in two ordered phases — a synchronous <strong>prepare</strong> followed by an asynchronous <strong>load</strong> — so that fast, order-independent setup is separated from DOM-dependent work. Pages and components share this model:</p>
+
+  <table>
+    <thead>
+      <tr><th>Phase</th><th>IModule method</th><th>Base-class override</th><th>Sync/async</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Prepare</td>
+        <td><code>setup()</code></td>
+        <td><code>onPrepare()</code></td>
+        <td>Synchronous</td>
+      </tr>
+      <tr>
+        <td>Load</td>
+        <td><code>exec()</code></td>
+        <td><code>onLoad()</code></td>
+        <td>Asynchronous (<code>Promise&lt;void&gt;</code>)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>In a base-class module, the framework's <code>setup()</code> runs its own bookkeeping first (context detection, and for pages, registering the current-page singleton) and then calls your <code>onPrepare()</code>. Likewise <code>exec()</code> calls your <code>onLoad()</code>. Both context objects — <code>pageInfo</code> on pages, <code>element</code>/<code>context</code> on components — are populated in the constructor, so they are available in <em>both</em> phases.</p>
+
+  <h3>Who drives the phases, and when</h3>
+  <p>The phases are invoked by two different drivers, which gives pages and components different <em>timing</em> even though the ordering guarantee is the same — all prepares complete before any loads:</p>
+  <table>
+    <thead>
+      <tr><th></th><th>Pages</th><th>Components</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Driver</td><td><a href="route-dispatcher.hd">RouteDispatcher</a></td><td><a href="components.hd">initializeComponents()</a></td></tr>
+      <tr><td>Prepare phase</td><td><code>setupRoute()</code> — typically called in the <code>&lt;head&gt;</code>, before DOM-ready</td><td>First pass of <code>initializeComponents()</code></td></tr>
+      <tr><td>Load phase</td><td><code>execRoute()</code> — called after DOM-ready</td><td>Second pass of <code>initializeComponents()</code></td></tr>
+      <tr><td>Timing</td><td>Two phases split across the head/DOM-ready boundary by two separate calls</td><td>Two phases back-to-back within one call, necessarily after DOM-ready (discovery queries the DOM)</td></tr>
+    </tbody>
+  </table>
+
+  <blockquote>
+    <p>Use <code>onPrepare()</code> for cheap, synchronous, order-independent work (reading IDs, setting flags, registering with shared managers). Use <code>onLoad()</code> for anything that touches the rendered DOM, makes network calls, or must await — and which may rely on every sibling module already being prepared.</p>
+  </blockquote>
+</section>
+
+<section>
+  <h2>The registry and decorators</h2>
+  <p>Two module-level <code>Map</code>s in <code>registry.ts</code> hold every registered page and component:</p>
+  <pre><code class="language-typescript">const componentRegistry = new Map&lt;string, ComponentConstructor&gt;();
+const pageRegistry = new Map&lt;string, PageConstructor&gt;();</code></pre>
+
+  <p>The <code>@page(route)</code> and <code>@component(name)</code> decorators populate these maps. Crucially, decorators execute <strong>at import time</strong> — the moment the class's module is evaluated — not when the class is instantiated. Each registration logs to the console:</p>
+  <pre><code>[SSE Registry] Page registered: "/"
+[SSE Registry] Component registered: "navigation"</code></pre>
+
+  <p>Consumers read the registry through helper functions: <code>getAllPages()</code>, <code>getComponent()</code>, <code>getRegistryStats()</code>, and friends (see <a href="api-reference.hd">API Reference</a>).</p>
+</section>
+
+<section>
+  <h2>Import order matters</h2>
+  <p>Because registration happens at import time, <strong>every page and component module must be imported before the registry is queried</strong>. Querying first yields an empty registry:</p>
+
+  <pre><code class="language-typescript">// WRONG — registry is still empty here
+const routes = getAllPages();
+import './pages/home';   // decorator runs too late</code></pre>
+
+  <pre><code class="language-typescript">// CORRECT — import first so the decorator registers the page
+import './pages/home';
+const routes = getAllPages();   // now contains HomePage</code></pre>
+
+  <p>Templates typically maintain a barrel file that imports all pages and components, ensuring every decorator has fired before <code>RouteDispatcher</code> and <code>initializeComponents()</code> run.</p>
+</section>
+
+<section>
+  <h2>Pages vs. components</h2>
+  <table>
+    <thead>
+      <tr><th></th><th>Page</th><th>Component</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Base class</td><td><code>PageBase</code></td><td><code>ComponentBase</code></td></tr>
+      <tr><td>Decorator</td><td><code>@page(route)</code></td><td><code>@component(name)</code></td></tr>
+      <tr><td>Constructor</td><td>No arguments — <code>new () =&gt; IModule</code></td><td>Receives the element — <code>new (el: HTMLElement) =&gt; IModule</code></td></tr>
+      <tr><td>Instances</td><td>One per matched route</td><td>One per matching element in the DOM</td></tr>
+      <tr><td>Keyed by</td><td>URL path (wildcards allowed)</td><td>Attribute value (<code>sse-component</code>)</td></tr>
+      <tr><td>Context</td><td><code>this.pageInfo</code> (Webflow page data)</td><td><code>this.element</code>, <code>this.context</code></td></tr>
+      <tr><td>Run by</td><td><code>RouteDispatcher</code></td><td><code>initializeComponents()</code></td></tr>
+    </tbody>
+  </table>
+
+  <p>A component can reach the active page through the singleton <code>PageBase.getCurrentPage()</code>, then read its Webflow data via <code>getPageInfo()</code> — so components stay page-agnostic. See <a href="pages.hd">Pages</a>.</p>
+</section>
+
+<section>
+  <h2>Module organization</h2>
+  <table>
+    <thead>
+      <tr><th>File</th><th>Responsibility</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>registry.ts</code></td><td>Decorator system and registry queries</td></tr>
+      <tr><td><code>page-base.ts</code></td><td><code>PageBase</code> and <code>WebflowPageInfo</code></td></tr>
+      <tr><td><code>component-base.ts</code></td><td><code>ComponentBase</code> and <code>ComponentContext</code></td></tr>
+      <tr><td><code>component-manager.ts</code></td><td><code>ComponentManager</code> instance tracking</td></tr>
+      <tr><td><code>component-init.ts</code></td><td><code>initializeComponents()</code> DOM discovery</td></tr>
+      <tr><td><code>routeDispatcher.ts</code></td><td><code>RouteDispatcher</code>, <code>IModule</code>, <code>Routes</code></td></tr>
+      <tr><td><code>page.ts</code></td><td><code>Page</code> static DOM / script / CSS helpers</td></tr>
+      <tr><td><code>script.ts</code></td><td><code>ScriptElement</code>, <code>ScriptConfig</code></td></tr>
+      <tr><td><code>debug.ts</code></td><td><code>Debug</code> conditional logger</td></tr>
+      <tr><td><code>request.ts</code></td><td><code>Request</code> query-param helper</td></tr>
+      <tr><td><code>init.ts</code></td><td>Engine loader and dev/prod mode switching</td></tr>
+      <tr><td><code>types.ts</code></td><td>Framework type definitions</td></tr>
+      <tr><td><code>index.ts</code></td><td>Public API surface, FIX re-exports, <code>initSSE()</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Design constraints</h2>
+  <ul>
+    <li><strong>Library, not app</strong> — keep code generic and reusable; site-specific logic belongs in the template.</li>
+    <li><strong>Lightweight</strong> — avoid heavy dependencies; favor tree-shakable exports and raw ES6 modules (no bundler-specific features).</li>
+    <li><strong>Backward compatible</strong> — the <code>IModule</code> pattern and existing decorators must keep working across versions.</li>
+    <li><strong>Runtime only</strong> — no virtual DOM, no reactive state, no build-time template compilation.</li>
+  </ul>
+</section>

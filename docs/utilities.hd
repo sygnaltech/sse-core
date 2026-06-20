@@ -1,0 +1,134 @@
+---
+title: Utilities
+version: 1
+date: 2026-06-20
+description: The Page, Debug, Request, and ScriptElement helper classes.
+tags: [sse, utilities, page, debug, request, script]
+---
+
+<h1>Utilities</h1>
+
+<p>Beyond the framework core, SSE ships a handful of focused helper classes for DOM work, dynamic resource loading, conditional logging, and reading the URL. All are exported from the package root.</p>
+
+<section>
+  <h2>Page</h2>
+  <p><code>Page</code> is a class of <strong>static</strong> helpers for page-level operations. It has two nested helpers, <code>Page.Head</code> and <code>Page.Body</code>, for targeting script insertion.</p>
+
+  <h3>Loading scripts</h3>
+  <pre><code class="language-typescript">import { Page } from '@sygnal/sse-core';
+
+Page.Head.loadScript('https://example.com/lib.js');
+Page.Body.loadScript('https://example.com/widget.js');
+
+// With configuration (see ScriptElement below)
+Page.Head.loadScript('https://example.com/module.js', { type: 'module', async: true });</code></pre>
+
+  <h3>Loading CSS</h3>
+  <table>
+    <thead><tr><th>Method</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><code>Page.loadCSS(url)</code></td><td>Appends a <code>&lt;link rel="stylesheet"&gt;</code> to <code>&lt;head&gt;</code></td></tr>
+      <tr><td><code>Page.loadEngineCSS(fileName)</code></td><td>Loads CSS from <code>{SSE.baseUrl}/css/{fileName}</code> — requires <code>initSSE()</code> to have run</td></tr>
+      <tr><td><code>Page.loadStyle(css)</code></td><td>Injects a <code>&lt;style&gt;</code> element with the given CSS text</td></tr>
+      <tr><td><code>Page.replaceScriptSource(el, newSrc)</code></td><td>Swaps a script element's <code>src</code></td></tr>
+      <tr><td><code>Page.replaceCSSLink(el, newHref)</code></td><td>Swaps a link element's <code>href</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Title, script URL, and unit helpers</h3>
+  <table>
+    <thead><tr><th>Method</th><th>Returns</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>prependToTitle(text)</code></td><td><code>void</code></td><td>Prefix the document title (used for the dev-mode marker)</td></tr>
+      <tr><td><code>getCurrentScriptUrl()</code></td><td><code>string | null</code></td><td><code>src</code> of <code>document.currentScript</code></td></tr>
+      <tr><td><code>getCurrentScriptBaseUrl()</code></td><td><code>string | undefined</code></td><td>Origin + directory of the current script</td></tr>
+      <tr><td><code>convertToPixels(value, ctx?)</code></td><td><code>number</code></td><td>Convert <code>px/rem/em/vh/vw/%</code> to pixels; throws on bad format</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Ancestor traversal</h3>
+  <pre><code class="language-typescript">const wrapper = Page.findAncestorWithAttribute(el, 'sse-component'); // HTMLElement | null
+const id = Page.getAncestorAttributeValue(el, 'data-id');            // string | null
+const has = Page.hasAncestorWithAttribute(el, 'data-id');            // boolean</code></pre>
+
+  <h3>Response headers</h3>
+  <p>Both issue a <code>HEAD</code> request (defaulting to the current URL) and read response headers — handy for detecting reverse-proxy markers.</p>
+  <pre><code class="language-typescript">const headers = await Page.getResponseHeaders();            // Headers | undefined
+const value = await Page.getResponseHeader('x-cache', url);  // string | undefined</code></pre>
+</section>
+
+<section>
+  <h2>Debug</h2>
+  <p><code>Debug</code> is a conditional logger that gates console output behind an enabled flag and can persist that flag in <code>localStorage</code> for remote debugging. Unlike <code>Page</code>, it is an <strong>instantiable class</strong> — construct one with a label.</p>
+
+  <pre><code class="language-typescript">import { Debug } from '@sygnal/sse-core';
+
+const debug = new Debug('[MyApp]', 'MyApp');  // (label, appName?)
+
+debug.enabled = true;            // enable for this instance
+debug.persistentDebug = true;    // also persist via localStorage
+
+debug.debug('Loaded', { items: 12 });   // logs only when enabled
+
+debug.group('API calls');
+debug.debug('Fetching…');
+debug.groupEnd();</code></pre>
+
+  <table>
+    <thead><tr><th>Member</th><th>Type</th><th>Behavior</th></tr></thead>
+    <tbody>
+      <tr><td><code>new Debug(label, appName?)</code></td><td>constructor</td><td><code>label</code> prefixes every log; <code>appName</code> defaults to <code>'Site'</code></td></tr>
+      <tr><td><code>enabled</code></td><td>get/set <code>boolean</code></td><td>True if set on the instance <em>or</em> the <code>debug-mode</code> localStorage flag is present</td></tr>
+      <tr><td><code>persistentDebug</code></td><td>get/set <code>boolean</code></td><td>Reads/writes the <code>debug-mode</code> localStorage key (survives reloads)</td></tr>
+      <tr><td><code>debug(...args)</code></td><td>method</td><td><code>console.debug(label, ...args)</code> when enabled</td></tr>
+      <tr><td><code>group(name)</code> / <code>groupEnd()</code></td><td>methods</td><td>Console grouping when enabled</td></tr>
+    </tbody>
+  </table>
+
+  <blockquote>
+    <p>The localStorage flag is checked with <code>Boolean(...)</code>, so <em>any</em> stored string — including the literal <code>"false"</code> — enables debugging. To turn persistent debug off, remove the key (<code>persistentDebug = false</code>), don't set it to a falsy string.</p>
+  </blockquote>
+</section>
+
+<section>
+  <h2>Request</h2>
+  <p><code>Request</code> provides a single static helper for reading a query parameter from the current URL.</p>
+
+  <pre><code class="language-typescript">import { Request } from '@sygnal/sse-core';
+
+const userId = Request.getQueryParam('user_id');  // string | null</code></pre>
+
+  <p><code>getQueryParam(name)</code> reads from <code>window.location.search</code> only; it does not accept a custom URL. To parse a different URL, use <code>this.pageInfo.queryParams</code> on a page or a <code>URLSearchParams</code> directly.</p>
+</section>
+
+<section>
+  <h2>ScriptElement</h2>
+  <p><code>ScriptElement</code> is a custom element extending <code>HTMLScriptElement</code> that builds a configured script tag and inserts it. <code>Page.Head.loadScript</code> / <code>Page.Body.loadScript</code> use it internally, but you can use it directly for finer control.</p>
+
+  <pre><code class="language-typescript">import { ScriptElement, ScriptConfig } from '@sygnal/sse-core';
+
+const config: ScriptConfig = {
+  type: 'module',
+  async: true,
+  id: 'my-script',
+  defer: false,
+  customAttributes: { 'data-version': '1.0' },
+};
+
+const script = new ScriptElement('https://example.com/module.js', config);
+script.appendTo('head');    // or prependTo('body')</code></pre>
+
+  <h3>ScriptConfig</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th>Maps to</th></tr></thead>
+    <tbody>
+      <tr><td><code>type</code></td><td><code>string</code></td><td><code>script.type</code></td></tr>
+      <tr><td><code>id</code></td><td><code>string</code></td><td><code>script.id</code></td></tr>
+      <tr><td><code>async</code></td><td><code>boolean</code></td><td><code>script.async</code></td></tr>
+      <tr><td><code>defer</code></td><td><code>boolean</code></td><td><code>script.defer</code></td></tr>
+      <tr><td><code>customAttributes</code></td><td><code>{ [k: string]: string }</code></td><td>Arbitrary <code>setAttribute</code> calls</td></tr>
+    </tbody>
+  </table>
+
+  <p>Methods <code>appendTo(target)</code> and <code>prependTo(target)</code> accept <code>'head'</code> or <code>'body'</code> (default <code>'body'</code>). The element is registered as the customized built-in <code>custom-script</code> (<code>extends: 'script'</code>).</p>
+</section>
