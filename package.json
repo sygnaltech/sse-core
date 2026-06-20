@@ -4,6 +4,12 @@
     "description": "Core functionality for Sygnal Site Engine (SSE)",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "publishConfig": {
+        "access": "public"
+    },
     "scripts": {
         "build": "tsc",
         "watch": "tsc -watch",
