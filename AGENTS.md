@@ -74,8 +74,17 @@ src/
 ├── debug.ts             # Debug logging utilities
 ├── script.ts            # ScriptElement class
 ├── request.ts           # Request utilities
+├── services/            # Self-contained runtime services
+│   └── lottie-manager.ts # Wrapper around Webflow's bundled lottie-web
 └── index.ts             # Public API exports
 ```
+
+**Services** (`src/services/`) are self-contained, framework-agnostic runtime
+helpers that wrap a browser/Webflow capability. They depend on neither the
+decorator system nor the lifecycle, are exported from the package root, and may
+attach a convenience global (e.g. `window.lottieManager`). `LottieManager` is
+the first; it wraps the Webflow-bundled lottie-web runtime (`Webflow.require('lottie')`),
+which Webflow does not expose globally.
 
 ### Critical Design Patterns
 
@@ -319,6 +328,6 @@ When extending SSE core:
 
 ---
 
-**Last Updated**: 2025-10-27
-**Version**: 0.3.0
+**Last Updated**: 2026-06-23
+**Version**: 2.3.0
 **Maintainer**: Michael Wells (mike@sygnal.com)

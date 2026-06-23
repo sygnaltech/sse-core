@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.3.0] - 2026-06-23
+### Added - LottieManager Service
+- **`LottieManager`** - A framework-agnostic wrapper around the Webflow-bundled lottie-web runtime, exported from the package root. Webflow does not expose lottie-web globally; it lives behind `Webflow.require('lottie')`. `LottieManager` gives SSE projects a typed way to enumerate registered animations and drive playback without touching Webflow internals.
+  - **Targeting** - `get(target)` / `all()` resolve an animation by 0-based index, CSS selector, container element, or animation instance.
+  - **Readiness gates** - `ready(min?, timeoutMs?)` resolves once Webflow has registered at least `min` animations; `libraryReady(timeoutMs?)` resolves once the lottie-web library itself is available (Webflow only loads it when the page contains a Lottie element).
+  - **Lazy init** - `ensure(target, opts?)` force-initialises a declared-but-not-yet-loaded Webflow Lottie element (e.g. below-the-fold, `data-loading="lazy"`), reading its `data-*` attributes and neutralising Webflow's deferred IntersectionObserver init to avoid a stacked second SVG. Idempotent.
+  - **Playback** - `playForward`, `playReverse`, `pause`, `stop`, `seek`, `setSpeed` — each accepts any target and returns `false` if it wasn't found.
+  - Also attached to `window.lottieManager` for ad-hoc/runtime use.
+  - Exposes `LottieAnimation` and `LottieTarget` types. lottie-web is treated as a Webflow-provided runtime dependency — it is not bundled.
+
+### Documentation
+- Added `docs/lottie-manager.hd` and linked it from the documentation map and API reference.
+
 ## [2.2.0] - 2026-06-20
 ### Changed - Component Lifecycle
 - **Two-phase component lifecycle** - `initializeComponents()` now runs components through the same two-phase lifecycle as pages: every component is constructed, registered, and prepared (`setup()` → `onPrepare()`) before any component is executed (`exec()` → `onLoad()`).

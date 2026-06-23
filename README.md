@@ -311,6 +311,45 @@ initializeComponents({
 </nav>
 ```
 
+### LottieManager (Service)
+
+A framework-agnostic wrapper around the Webflow-bundled lottie-web runtime. Webflow doesn't expose lottie-web globally (`window.lottie` is undefined) — it lives behind `Webflow.require('lottie')`. `LottieManager` lets you enumerate registered animations, target one (by index, CSS selector, or element), and drive playback without touching Webflow internals.
+
+```typescript
+import { LottieManager } from '@sygnal/sse-core';
+
+// Wait until Webflow has registered at least one Lottie, then drive it
+await LottieManager.ready();
+LottieManager.playForward(0);              // first Lottie on the page
+LottieManager.playReverse('#hero-lottie'); // by selector / element
+
+// Grab the raw lottie-web instance for finer control
+LottieManager.get(0)?.setSpeed(2);
+
+// Force-initialise a lazy (below-the-fold) Lottie that Webflow hasn't loaded yet
+const icon = LottieManager.ensure('#faq-icon', { autoplay: false, loop: false });
+
+// Seek and pause/stop
+LottieManager.seek('#hero-lottie', 30);    // jump to frame 30
+LottieManager.pause(0);
+```
+
+**Targeting** — every method accepts a `LottieTarget`: an animation instance, a container `Element`, a CSS selector `string`, or a 0-based `number` index.
+
+| Method | Purpose |
+|--------|---------|
+| `LottieManager.all()` | All animations Webflow has registered on the page |
+| `LottieManager.get(target)` | Resolve a target to a single animation, or `null` |
+| `LottieManager.ready(min?, timeoutMs?)` | Resolve once ≥ `min` animations are registered |
+| `LottieManager.libraryReady(timeoutMs?)` | Resolve once the lottie-web library is available |
+| `LottieManager.ensure(target, opts?)` | Force-init a declared-but-unloaded (lazy) Lottie; idempotent |
+| `LottieManager.playForward / playReverse(target)` | Set direction and play |
+| `LottieManager.pause / stop(target)` | Pause / stop |
+| `LottieManager.seek(target, frame, play?)` | Jump to a frame, optionally playing |
+| `LottieManager.setSpeed(target, speed)` | Set playback speed |
+
+Also attached to `window.lottieManager` for ad-hoc/runtime use. lottie-web is treated as a Webflow-provided runtime dependency and is **not** bundled.
+
 ### Page Utilities
 
 Static utility methods for page-level operations:
@@ -512,6 +551,8 @@ sse-core/
 │   ├── registry.ts           # Decorator system (@page, @component)
 │   ├── component-manager.ts  # Component instance tracking
 │   ├── component-init.ts     # Component initialization logic
+│   ├── services/
+│   │   └── lottie-manager.ts # Wrapper around Webflow's bundled lottie-web
 │   ├── types.ts              # Framework type definitions
 │   ├── script.ts             # ScriptElement and configuration
 │   ├── debug.ts              # Debug utilities

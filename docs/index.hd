@@ -46,6 +46,9 @@ tags: [sse, webflow, overview]
     <dt><a href="utilities.hd">Utilities</a></dt>
     <dd><code>Page</code>, <code>Debug</code>, <code>Request</code>, and <code>ScriptElement</code>.</dd>
 
+    <dt><a href="lottie-manager.hd">LottieManager</a></dt>
+    <dd>Driving Webflow's bundled lottie-web runtime — targeting, readiness gates, lazy init, and playback.</dd>
+
     <dt><a href="fix.hd">FIX — Functional Interactions</a></dt>
     <dd>The declarative trigger/action system and its HTML attribute syntax.</dd>
 
@@ -65,7 +68,7 @@ tags: [sse, webflow, overview]
     </thead>
     <tbody>
       <tr><td>Package</td><td><code>@sygnal/sse-core</code></td></tr>
-      <tr><td>Version</td><td>2.2.0</td></tr>
+      <tr><td>Version</td><td>2.3.0</td></tr>
       <tr><td>License</td><td>MIT</td></tr>
       <tr><td>Output</td><td>ES6 modules (no bundling) + <code>.d.ts</code> declarations</td></tr>
       <tr><td>Runtime deps</td><td><code>@sygnal/fix</code>, <code>js-cookie</code></td></tr>

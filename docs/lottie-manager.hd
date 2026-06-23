@@ -1,0 +1,118 @@
+---
+title: LottieManager
+version: 1
+date: 2026-06-23T00:00:00.000Z
+description: >-
+  A framework-agnostic wrapper around the Webflow-bundled lottie-web runtime for enumerating and driving Lottie
+  animations.
+tags:
+  - sse
+  - lottie
+  - webflow
+  - animation
+  - service
+id: 1lhQfWbFEIU1cTctC4irho
+---
+
+<h1>LottieManager</h1>
+
+<p><code>LottieManager</code> is a small, framework-agnostic <strong>service</strong> that wraps the Webflow-bundled <a href="https://airbnb.io/lottie/">lottie-web</a> runtime. It depends on neither the decorator system nor the lifecycle, and is exported from the package root.</p>
+
+<p>Webflow does <strong>not</strong> expose lottie-web globally — <code>window.lottie</code> is <code>undefined</code>. The runtime lives behind Webflow's module loader (<code>Webflow.require('lottie')</code>) and registers an animation instance for every Lottie element on the page. <code>LottieManager</code> gives you a clean, typed way to enumerate those animations, target a specific one, and drive playback (forward, reverse, seek, speed, pause, stop) without touching Webflow internals.</p>
+
+<blockquote>
+  <p>lottie-web is treated as a runtime dependency <em>provided by Webflow</em>. It is not bundled into <code>sse-core</code>, and only the small slice of its API that the manager uses is typed (see <code>LottieAnimation</code>).</p>
+</blockquote>
+
+<section>
+  <h2>Targeting: <code>LottieTarget</code></h2>
+  <p>Every method accepts a <code>LottieTarget</code>, resolved to a single animation by <code>get()</code>:</p>
+  <table>
+    <thead><tr><th>Target</th><th>Resolves to</th></tr></thead>
+    <tbody>
+      <tr><td><code>number</code></td><td>The animation at that 0-based index in <code>all()</code></td></tr>
+      <tr><td><code>string</code></td><td>The animation whose container matches the CSS selector</td></tr>
+      <tr><td><code>Element</code></td><td>The animation rendered into (or containing/contained by) that element</td></tr>
+      <tr><td><code>LottieAnimation</code></td><td>Itself — already an animation instance</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Readiness: <code>ready()</code> and <code>libraryReady()</code></h2>
+  <p>SSE often runs before Webflow has finished initialising its Lottie elements, so two gates are provided. Both poll via <code>requestAnimationFrame</code> and resolve on timeout rather than rejecting.</p>
+
+  <pre><code class="language-typescript">import { LottieManager } from '@sygnal/sse-core';
+
+// Wait until Webflow has registered at least one Lottie (default min = 1)
+const anims = await LottieManager.ready();        // LottieAnimation[]
+LottieManager.playForward(0);
+
+// Wait until the lottie-web library itself is available — use this when the
+// elements may be lazy and not yet registered.
+const lib = await LottieManager.libraryReady();   // LottieLib | null</code></pre>
+
+  <table>
+    <thead><tr><th>Method</th><th>Resolves with</th><th>Use when</th></tr></thead>
+    <tbody>
+      <tr><td><code>ready(min = 1, timeoutMs = 5000)</code></td><td>All registered animations (possibly fewer than <code>min</code> on timeout)</td><td>You expect Webflow to have eagerly rendered the Lottie</td></tr>
+      <tr><td><code>libraryReady(timeoutMs = 5000)</code></td><td>The lottie-web library, or <code>null</code> on timeout</td><td>Elements may be lazy; you intend to <code>ensure()</code> them yourself</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Lazy elements: <code>ensure()</code></h2>
+  <p>Webflow lazy-loads Lotties on scroll (<code>data-loading="lazy"</code>), so below-the-fold elements are not registered and cannot be driven. <code>ensure()</code> force-initialises one <em>now</em> using Webflow's own <code>loadAnimation</code>, reading the element's <code>data-*</code> attributes.</p>
+
+  <pre><code class="language-typescript">// Force-init a FAQ icon and keep it on its first frame
+const icon = LottieManager.ensure('#faq-icon', { autoplay: false, loop: false });
+if (icon) LottieManager.seek(icon, 0);</code></pre>
+
+  <ul>
+    <li><strong>Idempotent</strong> — returns the existing animation if already registered (or already rendered eagerly by Webflow), and <code>null</code> if there is no matching element or the library is unavailable.</li>
+    <li><strong>Container-aware</strong> — accepts the <code>[data-animation-type="lottie"]</code> element directly, or a container holding one (e.g. a card).</li>
+    <li><strong>Overrides</strong> — <code>opts.autoplay</code> / <code>opts.loop</code> override the element's <code>data-autoplay</code> / <code>data-loop</code>.</li>
+    <li><strong>No double-init</strong> — after loading, it strips <code>data-src</code> and <code>data-animation-type</code> so Webflow's deferred IntersectionObserver init won't stack a second SVG on top.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Playback</h2>
+  <p>Each playback method accepts any <code>LottieTarget</code> and returns <code>false</code> if the target could not be resolved (so callers can branch without throwing).</p>
+  <table>
+    <thead><tr><th>Method</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><code>playForward(target)</code></td><td>Set direction forward and play</td></tr>
+      <tr><td><code>playReverse(target)</code></td><td>Set direction backward and play</td></tr>
+      <tr><td><code>pause(target)</code></td><td>Pause at the current frame</td></tr>
+      <tr><td><code>stop(target)</code></td><td>Stop and reset to the start</td></tr>
+      <tr><td><code>seek(target, frame, play = false)</code></td><td>Jump to a frame; optionally play from there</td></tr>
+      <tr><td><code>setSpeed(target, speed)</code></td><td>Set playback speed multiplier</td></tr>
+    </tbody>
+  </table>
+
+  <pre><code class="language-typescript">LottieManager.playReverse('#hero-lottie');
+LottieManager.seek(0, 30);              // jump to frame 30 on the first Lottie
+LottieManager.setSpeed('#hero-lottie', 2);
+LottieManager.get(0)?.setSpeed(2);      // or grab the raw lottie-web instance</code></pre>
+</section>
+
+<section>
+  <h2>Global</h2>
+  <p>For ad-hoc and runtime use (e.g. from the browser console), the class is also attached to <code>window.lottieManager</code>:</p>
+  <pre><code class="language-javascript">window.lottieManager.all();
+window.lottieManager.playForward(0);</code></pre>
+</section>
+
+<section>
+  <h2>Types</h2>
+  <table>
+    <thead><tr><th>Export</th><th>Kind</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>LottieManager</code></td><td>static class</td><td>All members are static; no instance needed</td></tr>
+      <tr><td><code>LottieAnimation</code></td><td>interface</td><td>The slice of lottie-web's <code>AnimationItem</code> the manager uses</td></tr>
+      <tr><td><code>LottieTarget</code></td><td>type</td><td><code>LottieAnimation | Element | string | number</code></td></tr>
+    </tbody>
+  </table>
+</section>

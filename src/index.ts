@@ -22,6 +22,9 @@ export * from './types';
 export * from './component-manager';
 export * from './component-init';
 
+// Services
+export * from './services/lottie-manager';
+
 // FIX System (Functional Interactions) - re-export shared package
 export {
   TriggerBase,

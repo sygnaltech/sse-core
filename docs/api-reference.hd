@@ -105,6 +105,18 @@ id: 5QLtmbl5n5d3zhZbc4tIxp
 </section>
 
 <section>
+  <h2>LottieManager — <a href="lottie-manager.hd">LottieManager</a></h2>
+  <table>
+    <thead><tr><th>Export</th><th>Kind</th><th>Highlights</th></tr></thead>
+    <tbody>
+      <tr><td><code>LottieManager</code></td><td>static class</td><td><code>all()</code>, <code>get(target)</code>, <code>ready(min?, timeoutMs?)</code>, <code>libraryReady(timeoutMs?)</code>, <code>ensure(target, opts?)</code>, <code>playForward</code>, <code>playReverse</code>, <code>pause</code>, <code>stop</code>, <code>seek(target, frame, play?)</code>, <code>setSpeed(target, speed)</code></td></tr>
+      <tr><td><code>LottieAnimation</code></td><td>interface</td><td>Typed slice of lottie-web's <code>AnimationItem</code></td></tr>
+      <tr><td><code>LottieTarget</code></td><td>type</td><td><code>LottieAnimation | Element | string | number</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
   <h2>FIX — <a href="fix.hd">Functional Interactions</a></h2>
   <p>Re-exported from <code>@sygnal/fix</code>:</p>
   <table>
@@ -130,6 +142,7 @@ id: 5QLtmbl5n5d3zhZbc4tIxp
     <tbody>
       <tr><td><code>window.SSE</code></td><td><code>{ baseUrl?: string }</code></td><td><code>initSSE()</code></td></tr>
       <tr><td><code>window.componentManager</code></td><td><code>ComponentManager | undefined</code></td><td>The consuming project (default target for <code>initializeComponents()</code>)</td></tr>
+      <tr><td><code>window.lottieManager</code></td><td><code>typeof LottieManager</code></td><td>The <code>lottie-manager</code> service (on import)</td></tr>
     </tbody>
   </table>
 </section>
